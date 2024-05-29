@@ -1,7 +1,4 @@
- 
-require('dotenv').config()
-const client_id = process.env.CLIENT_ID
-
+const client_id = "vkfu4c51hsx801w76r6fmhudt0x685"
 let access_token;
 let data;
 let profilePicture;
@@ -9,7 +6,7 @@ let username;
 let div = document.getElementById('profile_picture')
 let img = document.createElement('img')
 img.addEventListener('click', function(){
-    location.href = "http://localhost:5500/profile.html"
+    location.href = "http://localhost:5500/pages/profile.html"
 })
 
 if(getCookie("accessToken")){
@@ -92,7 +89,7 @@ function ProfilePicture(){
     div.appendChild(img).setAttribute("class", "profile_picture")
 }    
 //URL will need to be changed to reflect live URL
-if(location.href === "http://localhost:5500/profile.html"){
+if(location.href === "http://localhost:5500/pages/profile.html"){
 
     GetChannels()
     JoinAndPartChannel()

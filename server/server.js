@@ -1,5 +1,6 @@
 const express = require('express')
 require('dotenv').config()
+const pool = require('./database')
 const app = express()
 const bodyParser = require('body-parser')
 const cors = require('cors')
@@ -18,9 +19,15 @@ const opts = {
   ]
 };
 
+// pool.getConnection(function(err) {
+//     if (err) throw err;
+//     console.log("Connected!")
+// })
+
 let channelName;
 // Create a client with our options
 const client = new tmi.client(opts);
+//Replace with Database Connection
 let approvedUsers = ["zack_ko", "wack_ko"]
 // Register our event handlers (defined below)
 client.on('message', getChannel)
@@ -142,6 +149,7 @@ async function onMessageHandler (target, context, msg, self) {
             })
         )
     }
+    //Add Custom Command parser
     }
     else {
         console.log(`* Unknown command ${commandName}`);
