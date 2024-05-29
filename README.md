@@ -1,1 +1,3 @@
-# _KoBot
+# \_KoBot
+
+A Bot created by Zack_Ko
