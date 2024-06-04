@@ -20,6 +20,7 @@ if(getCookie("username")){
 }
 
 if (document.location.hash && !getCookie("accessToken")) {
+    console.log("location hash if statement hit")
     let parsedHash = new URLSearchParams(window.location.hash.substr(1))
     if(parsedHash.get('access_token')){
         access_token = parsedHash.get('access_token')
@@ -31,6 +32,14 @@ if (document.location.hash && !getCookie("accessToken")) {
         }, 500)
         setTimeout(() => {console.log("reloading"); location.href = "http://localhost:5500"}, 750)
     }
+}
+
+//URL will need to be changed to reflect live URL
+if(location.href === "http://localhost:5500/pages/profile.html"){
+
+    GetChannels()
+    JoinAndPartChannel()
+    
 }
 
 async function GetChannelInfo(){
@@ -51,6 +60,7 @@ async function GetChannelInfo(){
         passInfoToBackend(access_token, data.data[0].login)
         document.cookie = `profilePicture=${data.data[0].profile_image_url}`
     })
+
 }
 
 
@@ -71,7 +81,8 @@ function getCookie(cname) {
 }    
 
 function ProfilePicture(){
-    profilePicture = getCookie("profilePicture")
+    //ProfilePictureFetch().then((response) => {document.cookie = `profilePicture=${response}`})
+    profilePicture = getCookie('profilePicture')
     document.getElementById("button").remove()
     let signOut = document.getElementById('signOutButton')
     let signOutButton = document.createElement('button')
@@ -88,12 +99,19 @@ function ProfilePicture(){
     img.src = profilePicture;
     div.appendChild(img).setAttribute("class", "profile_picture")
 }    
-//URL will need to be changed to reflect live URL
-if(location.href === "http://localhost:5500/pages/profile.html"){
 
-    GetChannels()
-    JoinAndPartChannel()
-}
+async function ProfilePictureFetch(user) { 
+    await fetch(`http://localhost:3000/user/${user}`, {
+    method: "GET",
+    headers: {
+        "Content-Type": "application/json"
+    },
+})
+.then((response) => response.text())
+.then((json) => {
+    console.log(json)
+    return json
+})}
 
 async function GetChannels(){
     let joinButton = document.getElementById('join')
@@ -116,7 +134,7 @@ async function GetChannels(){
     .catch(error => {
         joinButton.remove()
         partButton.remove()
-        let p = document.createElement('p').innerText = "<p>Unable To Reach Server</p>"
+        let p = document.createElement('p').innerText = `<p>Unable To Reach Server</p><p>${error}</p>`
         let er = document.getElementById("error")
         er.innerHTML = p
     })
@@ -163,6 +181,6 @@ async function passInfoToBackend(access_token, login) {
         headers: {
             "Content-Type": "application/json",
         },
-        body: `{"code": "${access_token}", "username": "${login}"}`
+        body: `{"code": "${access_token}", "username": "${login}", "profile_picture": "${profilePicture}"}`
     })
 }

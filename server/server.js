@@ -6,8 +6,10 @@ const bodyParser = require('body-parser')
 const cors = require('cors')
 const port = 3000
 let auth_code;
+let profile_picture;
 const tmi = require('tmi.js');
 const clientID = process.env.CLIENT_ID
+const database = 'twitch_app2'
 // Define configuration options
 const opts = {
   identity: {
@@ -45,10 +47,17 @@ async function onMessageHandler (target, context, msg, self) {
     // Remove whitespace from chat message
     const commandName = msg.trim();
     // If the command is known, let's execute it
-    if (commandName === '!dice') {
-        const num = rollDice();
-        client.say(target, `You rolled a ${num}`);
-        console.log(`* Executed ${commandName} command`);
+    if (commandName.split(' ')[0] === '!dice') {
+        if(commandName.split(' ').length > 2){
+            client.say(target, 'Please use command as instructed')
+        }
+        else{
+            let msgCopy = msg.trim()
+            let params = msgCopy.replace('!dice ','')
+            const num = rollDice(params);
+            client.say(target, `You rolled ${num}`);
+            console.log(`* Executed ${commandName} command`);
+        }
     } 
     // MOD ME COMMAND
     else if (commandName === "mod me") {
@@ -165,11 +174,26 @@ async function getChannel(channel, user, message, action){
     return channel.slice(1)
 }
 // Function called when the "dice" command is issued
-function rollDice () {
-  const sides = 6;
-  return Math.floor(Math.random() * sides) + 1;
+function rollDice (params) {
+  const parameters = params.split('d')
+  const sides = parameters[1];
+  const dice = parameters[0];
+  console.log(Number(sides), Number(dice))
+  if (!isNaN(Number(sides))){
+    let result = 0;
+    for(let i = 0; i < dice; i++){
+      result += rollDiceSub(sides)
+    }  
+    return result
+  }else{
+    return 'nothing. Please use the following notation. (x)d(y)'
+  }
+
 }
 
+function rollDiceSub(sides){
+    return Math.floor(Math.random() * sides) + 1
+}
 // Called every time the bot connects to Twitch chat
 function onConnectedHandler (addr, port) {
   console.log(`* Connected to ${addr}:${port}`);
@@ -192,12 +216,26 @@ app.get('/channels', (req, res) => {
     res.send(client.getChannels())
 })
 
+app.param('username', function (req, res, next, id){
+    next()
+})
+
+app.get('/user/:username', (req, res) => { 
+    getProfilePicQuery(req.params.username)
+    .then((response) => {res.send(response)})
+    
+})
+
 app.post('/auth', (req, res) =>{
     auth_code = req.body.code
+    profile_picture = req.body.profile_picture
+    username = req.body.username
+    
     //console.log(req.body.code)
     //console.log(auth_code)
     //console.log(req.body.username)
-    addChannel(req.body.username)
+    addChannel(username)
+    createUserQuery(username, profile_picture)
     //console.log(client.getChannels())
 })
 
@@ -244,5 +282,114 @@ function addChannel(username){
         client.join(username)
         console.log(opts.channels)
         console.log(client.getChannels())
+        
     }
 }
+
+async function createUserQuery(username, profile_picture){
+    try {
+      await pool.promise().query(`USE ${database}`)
+      
+      const [rows, fields] = await pool.promise().query('INSERT INTO users (username, profile_picture) VALUES (?,?)', [`${username.toString()}`, `${profile_picture.toString()}`]);
+      console.log(rows)
+      console.log(fields)
+    }
+    catch (err){
+      console.log(err)
+    }
+  }
+
+async function getProfilePicQuery(username){
+    try{
+        await pool.promise().query(`USE ${database}`)
+        const [rows, fields] = await pool.promise().query('SELECT distinct(profile_picture) as profile_picture FROM users WHERE username = ?', username.toString())
+        let result = rows[0].profile_picture
+        //console.log(result)
+        return result
+    }catch (err){
+        console.log(err)
+    }
+}
+
+async function getUserID(username){
+    try{
+        await pool.promise().query(`USE ${database}`)
+        const [rows, fields] = await pool.promise().query('SELECT distinct(id) as user_id FROM users WHERE username = ?', username.toString())
+        //console.log(rows[0].user_id)
+        return rows[0].user_id
+    }
+    catch (err){
+        console.log(err)
+    }
+}
+
+//getUserID("zack_ko").then((res)=> console.log(res))
+
+async function addWhitelist(username, command, whitelisted){
+    try{
+        await pool.promise().query(`USE ${database}`)
+        let userid = await getUserID(username)
+        .then(
+            (response) => { return response}
+        )
+        let commandid = await getCommandID(username, command)
+        const [rows, fields] = await pool.promise().query('INSERT INTO approved_users (streamer_id, command_id, username) VALUES (?,?,?)', [userid, commandid, whitelisted])
+    }
+    catch(err){
+        console.log(err)
+    }
+}
+addCommand("wack_ko", "command2", "say thing")
+addWhitelist("wack_ko", "command2", "zack_ko")
+
+async function addCommand(username, command, action){
+    try{
+        await pool.promise().query(`USE ${database}`)
+        var userid = await getUserID(username)
+        .then((res) => {
+            return res
+        })
+        const [rows, fields] = await pool.promise().query('INSERT INTO commands (user_id, command_name, action) VALUES (?,?,?)',[userid, command, action])
+    }
+    catch(err){
+        console.log(err.sqlMessage)
+    }
+}
+
+
+//delCommand("wack_ko", "command1")
+
+async function getCommandID(username, command){
+    try{
+        await pool.promise().query(`USE ${database}`)
+        var userid = await getUserID(username)
+        .then((res) => {
+            return res
+        })
+        const [rows, fields] = await pool.promise().query('SELECT id FROM commands WHERE user_id = ? AND command_name = ?', [userid, command])
+        console.log(rows[0].id)
+        return rows[0].id
+    }
+    catch (err){
+        console.log(err)
+    }
+}
+
+async function delCommand(username, command){
+    try{
+        await pool.promise().query(`USE ${database}`)
+        var commandid = await getCommandID(username, command)
+        .then((res) => {
+            return res
+        })
+        const [rows, fields] = await pool.promise().query('DELETE FROM commands WHERE id = ?',[commandid])
+    }
+    catch (err){
+        console.log(err)
+    }
+}
+// async function delWhitelist(){
+//     try{
+//         const [rows, fields] = await pool.promise().query()
+//     }
+// }
