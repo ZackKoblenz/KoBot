@@ -33,6 +33,40 @@
     <div id="error"></div>
     <span id="joinSpan"><button id="join"><a>Join Channel</a></button></span>
     <span id="partSpan"><button id="part"><a>Part Channel</a></button></span>
+    <div>
+        <h1> Add Commands </h1>
+    </div>
+    
+    <div>
+        <form id="commandForm">
+        <div>
+            <span><input type="text" placeholder="Command Name" id="commandname"></span>
+            <span><select name="userlevel" id="userlevel">
+                <option value="everyone">Everyone</option>
+                <option value="subscriber">Subscriber</option>
+                <option value="vip">VIP</option>
+                <option value="moderator">Moderator</option>
+                <option value="broadcaster">Broadcaster</option>
+            </select></span>
+        </div>
+        <div>
+            <textarea id="action" type="textarea" class="biggertext" placeholder="Command Action"></textarea>
+        </div>
+        <div>
+            <button><a id="submitForm">Add New Command</a></button>
+        </div>
+    </form>
+    </div>
+    <div>
+        <input type="text" placeholder="Search..." class="search" name="search">
+        <table id="commands">
+            <tr>
+                <th>Command Names</th>
+                <th>Command Actions</th>
+            </tr>
+        </table>
+        <ul id="response">
+    </div>
 </body>
 <script src="../scripts/index.js"></script>
 </html>

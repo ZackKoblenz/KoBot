@@ -1,6 +1,6 @@
 html {
-    background: rgb(238,174,202);
-    background: radial-gradient(circle, rgba(238,174,202,1) 0%, rgba(148,187,233,1) 100%);
+    background: rgb(20, 20, 20);
+    /* background: radial-gradient(circle, rgba(238,174,202,1) 0%, rgba(148,187,233,1) 100%); */
     color: white;
     font-family:'Courier New', Courier, monospace;
 }
@@ -8,6 +8,9 @@ body {
     margin: 0px;
 }
 p{
+    margin: 8px;
+}
+h1{
     margin: 8px;
 }
 .profile_picture {
@@ -43,7 +46,7 @@ a:hover {
     background-color: #e900e9;
 }
 nav {
-    background-color: rgb(0, 0, 0);
+    background-color: rgb(255, 208, 0);
 }
 .flex-container {
     display: flex;
@@ -62,4 +65,81 @@ button {
 	font: inherit;
 	cursor: pointer;
 	outline: inherit;
+    margin: 10px;
 }
+input[type=text] {
+    width: 60%;
+    padding: 12px 20px;
+    margin: 8px 8px;
+    box-sizing: border-box;
+    border-radius: 4px;
+    font-size: 12px;
+    border: 2px solid rgb(51, 51, 51);
+  }
+input[type=text]:focus {
+    transition: 0s;
+    border: 3px solid #000000;
+}
+textarea{
+    width: 60%;
+    padding: 12px 20px;
+    margin: 8px 8px;
+    box-sizing: border-box;
+    border-radius: 4px;
+    font-size: 12px;
+    border: 2px solid rgb(51, 51, 51);
+  }
+textarea:focus {
+    transition: 0s;
+    border: 3px solid #000000;
+}
+input[type=text].search {
+    box-sizing: border-box;
+    border-radius: 4px;
+    font-size: 18px;
+    background-color: white;
+    background-image: url('searchicon2.png');
+    background-size: 20px;
+    background-position: 12px 12px;
+    background-repeat: no-repeat;
+    padding: 12px 20px 12px 40px;
+
+  }
+  input[type=text].search:hover{
+    background-color: rgb(221, 221, 221);
+  }
+  textarea.biggertext{
+    text-align: left;
+    height: 100px;
+  }
+  textarea.biggertext:focus{
+    height: 400px;
+  }
+  table {
+    margin: 20px;
+    border: 1px solid white;
+    border-collapse: collapse;
+    background-color: rgba(255, 255, 255, 0.171);
+  }
+  th {
+    width: 20%;
+    border: 1px solid white;
+    background-color: white;
+    color: black;
+  }
+  td {
+    border: 1px solid white;
+  }
+  button.delete{
+    align-items:flex-end;
+  }
+  select{
+    width: 20%;
+    box-sizing: border-box;
+    padding: 11px 20px;
+    margin: 8px 8px;
+    box-sizing: border-box;
+    border-radius: 4px;
+    font-size: 12px;
+    border: 2px solid rgb(51, 51, 51);
+  }

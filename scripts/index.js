@@ -39,7 +39,16 @@ if(location.href === "http://localhost:5500/pages/profile.html"){
 
     GetChannels()
     JoinAndPartChannel()
-    
+    getCommands(getCookie("username"))
+    let commandForm = document.getElementById("commandForm")
+    commandForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        let command = document.getElementById("commandname")
+        let action = document.getElementById("action")
+        let userlevel = document.getElementById("userlevel")
+        addCommand(getCookie("username"), command.value, action.value, userlevel.value)
+        setTimeout(() => {console.log("reloading"); location.href = "http://localhost:5500/pages/profile.html"}, 750)
+    })
 }
 
 async function GetChannelInfo(){
@@ -184,3 +193,63 @@ async function passInfoToBackend(access_token, login) {
         body: `{"code": "${access_token}", "username": "${login}", "profile_picture": "${profilePicture}"}`
     })
 }
+
+async function updateCommand(username, command, action){
+    await fetch ("http://localhost:3000/commands", {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: `{"username": "${username}", "command": "${command}", "action": "${action}"}`
+    })
+}
+
+async function getCommands(username){
+    const myList = document.getElementById("commands")
+    await fetch("http://localhost:3000/commands", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: `{"username": "${username}"}`
+    }).then((res) => res.json())
+    .then((json) => {console.log(json); 
+        let i = 0
+        let commandnames = []
+        for(const commands of json){
+            const divItem = document.createElement("div")
+            const listItem = document.createElement("tr")
+            listItem.appendChild(document.createElement("td")).innerHTML = `<button><a>Enabled</a></button>${commands.command_name}`
+            listItem.appendChild(document.createElement("td")).innerHTML = `${commands.action}<button id="delete" class="delete"><a>Delete</a></button>`
+            myList.appendChild(listItem)
+            const del = document.getElementsByClassName("delete")
+            console.log(del)
+            del[i].addEventListener("click", () => {
+                delCommand(getCookie("username"),commands.command_name)
+                setTimeout(() => {console.log("reloading"); location.href = "http://localhost:5500/pages/profile.html"}, 750)
+            })
+            i++
+        }
+
+    })
+}
+
+async function addCommand(username, command, action, userlevel){
+    await fetch('http://localhost:3000/commands/add', {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: `{"username": "${username}", "command": "${command}", "action": "${action}", "userlevel": "${userlevel}"}`
+    })
+}
+
+ async function delCommand(username, command){
+    await fetch('http://localhost:3000/commands/', {
+        method: "DELETE",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: `{"username": "${username}", "command": "${command}"}`
+    })
+ }
