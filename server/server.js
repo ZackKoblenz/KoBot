@@ -46,6 +46,7 @@ async function onMessageHandler (target, context, msg, self) {
     if (self) { return; } // Ignore messages from the bot
     // Remove whitespace from chat message
     const commandName = msg.trim();
+    //let approvedUsers = await getWhitelist(channelName)
     // If the command is known, let's execute it
     if (commandName.split(' ')[0] === '!dice') {
         if(commandName.split(' ').length > 2){
@@ -305,7 +306,28 @@ app.post('/commands', (req,res) => {
 })
 
 app.post('/commands/add', (req,res) => {
+    console.log("add command")
     addCommand(req.body.username, req.body.command, req.body.action, req.body.userlevel)
+})
+
+app.patch('/commands/update/all', (req, res) => {
+    updateCommand(req.body.username, req.body.command, req.body.action, req.body.userlevel, req.body.enabled)
+})
+
+app.patch('/commands/update/name', (req, res) => {
+    updateCommandName(req.body.username, req.body.command, req.body.name)
+})
+
+app.patch('/commands/update/action', (req, res) => {
+    updateCommandAction(req.body.username, req.body.command, req.body.action)
+})
+
+app.patch('/commands/update/userlevel', (req, res) => {
+    updateCommandUserLevel(req.body.username, req.body.command, req.body.userlevel)
+})
+
+app.post('/commands/update/enable', (req, res) => {
+    updateCommandEnabledState(req.body.username, req.body.command, req.body.enabled)
 })
 
 app.delete('/commands', (req,res) => {
@@ -453,8 +475,19 @@ async function delAllWhitelist(username){
         console.log(err)
     }
 }
-async function getWhitelist(){
-
+async function getWhitelist(username){
+    try{
+        await pool.promise().query(`USE ${database}`)
+        let userid = await getUserID(username)
+        .then(
+            (response) => { return response}
+        )
+        const [rows, fields] = await pool.promise().query('SELECT * FROM approved_users WHERE streamer_id = ?', [userid])
+        return rows
+    }
+    catch (err){
+        console.log(err)
+    }
 }
 
 //addCommand("zack_ko", "anotherone", "shows that this works dynamically")
@@ -490,6 +523,21 @@ async function getCommandID(username, command){
     }
 }
 
+async function getCommand(username, command){
+    try{
+        await pool.promise().query(`USE ${database}`)
+        var userid = await getUserID(username)
+        .then((res) => {
+            return res
+        })
+        const [rows, fields] = await pool.promise().query('SELECT command_name FROM commands WHERE user_id = ? AND command_name = ?', [userid, command])
+        return rows[0]
+    }
+    catch(err) {
+        console.log(err)
+    }
+}
+
 async function getCommands(username){
     try{
         await pool.promise().query(`USE ${database}`)
@@ -505,20 +553,81 @@ async function getCommands(username){
     }
 }
 
-async function updateCommand(username, command, action, userlevel = "everyone"){
+async function updateCommand(username, command, action, userlevel, enabled){
     try{
         await pool.promise().query(`USE ${database}`)
         let userid = await getUserID(username)
         .then((res) => {
             return res
         })
-        const [rows, fields] = await pool.promise().query('UPDATE commands SET action = ? WHERE user_id = ? AND command_name = ?', [action, userid, command])
+        const [rows, fields] = await pool.promise().query('UPDATE commands SET action = ? AND userlevel = ? AND enabled = ? WHERE user_id = ? AND command_name = ?', [action, userlevel, enabled, userid, command])
     }catch(err){
         console.log(err)
     }
 }
 
+//write update command function for each parameter
+
+async function updateCommandName(username, command, newName){
+    try{
+        await pool.promise().query(`USE ${database}`)
+        let userid = await getUserID(username)
+        .then((res) => {
+            return res
+        })
+        const [rows, fields] = await pool.promise().query('UPDATE commands SET command_name = ? WHERE user_id = ? AND command_name = ?', [newName, userid, command])
+    }
+    catch (err){
+        console.log(err)
+    }
+}
+
+async function updateCommandAction(username, command, newAction){
+    try{
+        await pool.promise().query(`USE ${database}`)
+        let userid = await getUserID(username)
+        .then((res) => {
+            return res
+        })
+        const [rows, fields] = await pool.promise().query('UPDATE commands SET action = ? WHERE user_id = ? AND command_name = ?', [newAction, userid, command])
+    }
+    catch (err){
+        console.log(err)
+    }
+}
+
+async function updateCommandUserLevel(username, command, userlevel){
+    try{
+        await pool.promise().query(`USE ${database}`)
+        let userid = await getUserID(username)
+        .then((res) => {
+            return res
+        })
+        const [rows, fields] = await pool.promise().query('UPDATE commands SET userlevel = ? WHERE user_id = ? AND command_name = ?', [userlevel, userid, command])
+    }
+    catch(err){
+        console.log(err)
+    }
+}
+
+async function updateCommandEnabledState(username, command, enabled){
+    try{
+        await pool.promise().query(`USE ${database}`)
+        let userid = await getUserID(username)
+        .then((res) => {
+            return res
+        })
+        const [rows, fields] = await pool.promise().query('UPDATE commands SET enabled = ? WHERE user_id = ? AND command_name = ?', [enabled, userid, command])
+    }
+    catch(err){
+        console.log(err)
+    }
+}
+
 async function delCommand(username, command){
+    console.log("delete command")
+    console.log(username)
+    console.log(command)
     try{
         await pool.promise().query(`USE ${database}`)
         var commandid = await getCommandID(username, command)

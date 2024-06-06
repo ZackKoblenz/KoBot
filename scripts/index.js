@@ -204,6 +204,16 @@ async function updateCommand(username, command, action){
     })
 }
 
+async function updateCommandEnabled(username, command, enabled) {
+    await fetch ("http://localhost:3000/commands/update/enable", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: `{"username": "${username}", "command": "${command}", "enabled": "${enabled}"}`
+    })
+}
+
 async function getCommands(username){
     const myList = document.getElementById("commands")
     await fetch("http://localhost:3000/commands", {
@@ -219,14 +229,42 @@ async function getCommands(username){
         for(const commands of json){
             const divItem = document.createElement("div")
             const listItem = document.createElement("tr")
-            listItem.appendChild(document.createElement("td")).innerHTML = `<button><a>Enabled</a></button>${commands.command_name}`
+            listItem.appendChild(document.createElement("td")).innerHTML = `<button id="enable" class="enabled"><a id="Enabled${i}">Enabled</a></button>${commands.command_name}`
             listItem.appendChild(document.createElement("td")).innerHTML = `${commands.action}<button id="delete" class="delete"><a>Delete</a></button>`
             myList.appendChild(listItem)
+            //Delete Button Logic
             const del = document.getElementsByClassName("delete")
             console.log(del)
             del[i].addEventListener("click", () => {
                 delCommand(getCookie("username"),commands.command_name)
                 setTimeout(() => {console.log("reloading"); location.href = "http://localhost:5500/pages/profile.html"}, 750)
+            })
+            //Enabled Button Toggle
+            const enabled = document.getElementsByClassName("enabled")
+            const enable = document.getElementById(`Enabled${i}`)
+            console.log(enabled)
+            let isToggled = false;
+            if(commands.enabled === 1){
+                isToggled = true
+                
+            }else {
+                enable.innerText = "Disabled"
+            }
+            
+            enabled[i].addEventListener("click", () => {
+                
+                if(isToggled){
+                    updateCommandEnabled(getCookie("username"), commands.command_name, 0);
+                    enable.innerText = "Disabled"
+                }
+                else{
+                    updateCommandEnabled(getCookie("username"), commands.command_name, 1);
+                    enable.innerText = "Enabled"
+                    
+                }
+                isToggled = !isToggled;
+                
+                
             })
             i++
         }
@@ -235,6 +273,7 @@ async function getCommands(username){
 }
 
 async function addCommand(username, command, action, userlevel){
+    console.log("add command")
     await fetch('http://localhost:3000/commands/add', {
         method: "POST",
         headers: {
@@ -245,6 +284,7 @@ async function addCommand(username, command, action, userlevel){
 }
 
  async function delCommand(username, command){
+    // console.log("delete command")
     await fetch('http://localhost:3000/commands/', {
         method: "DELETE",
         headers: {
