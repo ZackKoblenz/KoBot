@@ -310,7 +310,7 @@ app.post('/commands/add', (req,res) => {
     addCommand(req.body.username, req.body.command, req.body.action, req.body.userlevel)
 })
 
-app.patch('/commands/update/all', (req, res) => {
+app.post('/commands/update/all', (req, res) => {
     updateCommand(req.body.username, req.body.command, req.body.action, req.body.userlevel, req.body.enabled)
 })
 
@@ -560,7 +560,7 @@ async function updateCommand(username, command, action, userlevel, enabled){
         .then((res) => {
             return res
         })
-        const [rows, fields] = await pool.promise().query('UPDATE commands SET action = ? AND userlevel = ? AND enabled = ? WHERE user_id = ? AND command_name = ?', [action, userlevel, enabled, userid, command])
+        const [rows, fields] = await pool.promise().query('UPDATE commands SET action = ?, user_level = ?, enabled = ? WHERE user_id = ? AND command_name = ?', [action, userlevel, enabled, userid, command])
     }catch(err){
         console.log(err)
     }
@@ -625,9 +625,9 @@ async function updateCommandEnabledState(username, command, enabled){
 }
 
 async function delCommand(username, command){
-    console.log("delete command")
-    console.log(username)
-    console.log(command)
+    // console.log("delete command")
+    // console.log(username)
+    // console.log(command)
     try{
         await pool.promise().query(`USE ${database}`)
         var commandid = await getCommandID(username, command)

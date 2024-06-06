@@ -194,13 +194,13 @@ async function passInfoToBackend(access_token, login) {
     })
 }
 
-async function updateCommand(username, command, action){
-    await fetch ("http://localhost:3000/commands", {
-        method: "PATCH",
+async function updateCommand(username, command, action, userlevel, enabled){
+    await fetch ("http://localhost:3000/commands/update/all", {
+        method: "POST",
         headers: {
             "Content-Type": "application/json",
         },
-        body: `{"username": "${username}", "command": "${command}", "action": "${action}"}`
+        body: `{"username": "${username}", "command": "${command}", "action": "${action}", "userlevel": "${userlevel}", "enabled":"${enabled}"}`
     })
 }
 
@@ -229,8 +229,19 @@ async function getCommands(username){
         for(const commands of json){
             const divItem = document.createElement("div")
             const listItem = document.createElement("tr")
-            listItem.appendChild(document.createElement("td")).innerHTML = `<button id="enable" class="enabled"><a id="Enabled${i}">Enabled</a></button>${commands.command_name}`
-            listItem.appendChild(document.createElement("td")).innerHTML = `${commands.action}<button id="delete" class="delete"><a>Delete</a></button>`
+            listItem.appendChild(document.createElement("td"))
+            .innerHTML = `<button id="enable" class="enabled"><a id="Enabled${i}">Enabled</a></button>${commands.command_name}`
+            listItem.appendChild(document.createElement("td"))
+            .innerHTML = `<span><input type="text" value="${commands.action}" id="commandaction${i}"></span>
+            <button id="delete" class="delete"><a>Delete</a></button>
+            <button id="update${i}" class="update"><a>Update</a></button>
+            <select name="userlevel" id="userlevel${i}">
+                <option value="everyone" id="everyone${i}">Everyone</option>
+                <option value="subscriber" id="subscriber${i}">Subscriber</option>
+                <option value="vip" id="vip${i}">VIP</option>
+                <option value="moderator" id="moderator${i}">Moderator</option>
+                <option value="broadcaster" id="broadcaster${i}">Broadcaster</option>
+            </select>`
             myList.appendChild(listItem)
             //Delete Button Logic
             const del = document.getElementsByClassName("delete")
@@ -242,18 +253,22 @@ async function getCommands(username){
             //Enabled Button Toggle
             const enabled = document.getElementsByClassName("enabled")
             const enable = document.getElementById(`Enabled${i}`)
+            const defaultValue = document.getElementById(`${commands.user_level}${i}`)
+            const commandInput = document.getElementById(`commandaction${i}`)
+            const userLevel = document.getElementById(`userlevel${i}`)
+            defaultValue.setAttribute("selected", "selected")
             console.log(enabled)
-            let isToggled = false;
+            let isEnableToggled = false;
+            let isEditToggled = false;
             if(commands.enabled === 1){
-                isToggled = true
+                isEnableToggled = true
                 
             }else {
                 enable.innerText = "Disabled"
             }
             
             enabled[i].addEventListener("click", () => {
-                
-                if(isToggled){
+                if(isEnableToggled){
                     updateCommandEnabled(getCookie("username"), commands.command_name, 0);
                     enable.innerText = "Disabled"
                 }
@@ -262,10 +277,35 @@ async function getCommands(username){
                     enable.innerText = "Enabled"
                     
                 }
-                isToggled = !isToggled;
-                
-                
+                isEnableToggled = !isEnableToggled;
             })
+            //Update Button Submit
+
+            const update = document.getElementById(`update${i}`)
+            update.addEventListener("click", () => {
+                updateCommand(getCookie("username"), commands.command_name, commandInput.value, userLevel.value, commands.enabled)
+            })
+
+            //Edity Button Toggle
+            // const edit = document.getElementsByClassName("edit")
+            // edit[i].addEventListener("click", () => {
+            //     console.log("click edit")
+            //     const oldElement = document.getElementById("commandaction")
+            //     const newElement = document.createElement("input")
+            //     newElement.setAttribute("value", `${commands.action}`)
+            //     newElement.setAttribute("type", "text")
+            //     newElement.setAttribute("id", "commandaction")
+            //     if(!isEditToggled){
+            //         newElement.replaceWith(oldElement)
+            //     }
+            //     else{
+            //         const oldElement2 = document.getElementById("commandaction")
+            //         const newElement2 = document.createElement("p")
+            //         newElement2.innerText = `${commands.action}`
+            //         oldElement2.replaceWith(newElement2)
+            //     }
+            //     isEditToggled = !isEditToggled;
+            // })
             i++
         }
 
