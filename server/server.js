@@ -180,7 +180,22 @@ async function onMessageHandler (target, context, msg, self) {
                                 //console.log(res[j].user_id)
                                 if(commandName === res[j].command_name){
                                     if(res[j].enabled === 1){
-                                        client.say(target, res[j].action)
+                                        if((res[j].user_level === "subscriber" && context.subscriber) || (res[j].user_level === "subscriber" && context.mod) || (res[j].user_level === "subscriber" && context.badges.vip)){
+                                            client.say(target, res[j].action)
+                                        }
+                                        else if(res[j].user_level === "moderator" && context.mod){
+                                            client.say(target, res[j].action)
+                                        }
+                                        else if((res[j].user_level === "vip" && context.badges.vip) || (res[j].user_level === "vip" && context.mod)){
+                                            client.say(target, res[j].action)
+                                        }
+                                        else if(res[j].user_level === "broadcaster" && context.badges.broadcaster){
+                                            client.say(target, res[j].action)
+                                        }
+                                        else if(context.badges.broadcaster){
+                                            client.say(target, res[j].action)
+                                        }
+                                        
                                     }
                                     
                                 }
