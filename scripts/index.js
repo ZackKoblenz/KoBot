@@ -125,6 +125,25 @@ async function ProfilePictureFetch(user) {
 async function GetChannels(){
     let joinButton = document.getElementById('join')
     let partButton = document.getElementById('part') 
+    let userid = await fetch('http://localhost:3000/userid', {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: `{"username": "${getCookie("username")}"}`
+    })
+    .then((res) => {
+        return res.json()
+    })
+    .catch((error) => {
+        joinButton.remove()
+        partButton.remove()
+        let p = document.createElement('p').innerText = `<p>Unable To Reach Server</p><p>${error}</p>`
+        let er = document.getElementById("error")
+        er.innerHTML = p
+    })
+   console.log(userid)
+
     await fetch('http://localhost:3000/channels', {
         method: "GET",
         headers: {
@@ -134,19 +153,22 @@ async function GetChannels(){
     .then((response) => response.json())
     .then((json) => {
         console.log(json)
-        if(json.includes(`#${getCookie("username")}`)){
+        let bool = [];
+        for(let i = 0; i < json.length; i++){
+            //console.log(json[i].user_id)
+            if(json[i].user_id === userid){
+                bool.push("true")
+            }else{
+                bool.push("false")
+            }
+        }
+        if(bool.includes("true")){
             joinButton.remove()
         }else{
             partButton.remove()
         }
     })
-    .catch(error => {
-        joinButton.remove()
-        partButton.remove()
-        let p = document.createElement('p').innerText = `<p>Unable To Reach Server</p><p>${error}</p>`
-        let er = document.getElementById("error")
-        er.innerHTML = p
-    })
+    
 }
 
 function JoinAndPartChannel() {
@@ -245,10 +267,13 @@ async function getCommands(username){
             myList.appendChild(listItem)
             //Delete Button Logic
             const del = document.getElementsByClassName("delete")
-            console.log(del)
+            //console.log(del)
             del[i].addEventListener("click", () => {
                 delCommand(getCookie("username"),commands.command_name)
-                setTimeout(() => {console.log("reloading"); location.href = "http://localhost:5500/pages/profile.html"}, 750)
+                setTimeout(() => {
+                    console.log("reloading"); 
+                    location.href = "http://localhost:5500/pages/profile.html"
+                }, 750)
             })
             //Enabled Button Toggle
             const enabled = document.getElementsByClassName("enabled")
@@ -257,7 +282,7 @@ async function getCommands(username){
             const commandInput = document.getElementById(`commandaction${i}`)
             const userLevel = document.getElementById(`userlevel${i}`)
             defaultValue.setAttribute("selected", "selected")
-            console.log(enabled)
+            //console.log(enabled)
             let isEnableToggled = false;
             let isEditToggled = false;
             if(commands.enabled === 1){
