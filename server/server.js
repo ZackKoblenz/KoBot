@@ -36,8 +36,11 @@ client.on('message', onMessageHandler);
 client.on('connected', onConnectedHandler);
 
 // Connect to Twitch:
-client.connect();
+async function Connect(){
+    await client.connect();
+}
 
+Connect()
 
 
 // Called every time a message comes in
@@ -45,10 +48,11 @@ async function onMessageHandler (target, context, msg, self) {
     if (self) { return; } // Ignore messages from the bot
     // Remove whitespace from chat message
     const commandName = msg.trim();
+    getAuthCode(target.slice(1))
     //let approvedUsers = await getWhitelist(channelName)
     // If the command is known, let's execute it
     async function CommandModules (){
-        let userid = await getUserID(target.split('#')[1]).then((res)=>{return res})
+        let userid = await getUserID(target.split('#')[1]).then((res)=>{console.log(res) ;return res})
         if (commandName.split(' ')[0] === '!dice') {
             if(commandName.split(' ').length > 2){
                 client.say(target, 'Please use command as instructed')
@@ -62,10 +66,10 @@ async function onMessageHandler (target, context, msg, self) {
             }
         } 
         // MOD ME COMMAND
-        else if (commandName.toUpperCase() === `mod me`) {
+        else if (commandName.toLowerCase() === `mod me`) {
+           // console.log("mod me ")
             if (approvedUsers.includes(context.username)){
-                client.say(target, `/mod ${context.username}`)
-
+                //client.say(target, `/mod ${context.username}`)
                 let data;
                 let broadcaster_id
 
@@ -77,7 +81,7 @@ async function onMessageHandler (target, context, msg, self) {
                     }
                 })
                 .then((response) => response.json())
-                .then((json) => data = json)
+                .then((json) => {data = json})
                 //Get Broadcaster ID
                 await fetch(`https://api.twitch.tv/helix/users?login=${channelName}`, {
                     method: "GET",
@@ -87,7 +91,7 @@ async function onMessageHandler (target, context, msg, self) {
                     }
                 })
                 .then((response) => response.json())
-                .then((json) => broadcaster_id = json.data[0].id)
+                .then((json) => { broadcaster_id = json.data[0].id})
 
                 await fetch(`https://api.twitch.tv/helix/channels/vips?broadcaster_id=${broadcaster_id}&user_id=${data.data[0].id}`, {
                     method: "DELETE",
@@ -96,6 +100,12 @@ async function onMessageHandler (target, context, msg, self) {
                         "Client-ID": clientID
                     }
                 })
+                .then((res) => {
+                    //console.log(res)
+                })
+                // .then((json) => {
+                //     console.log(json)
+                // })
                 .then(
                     await fetch(`https://api.twitch.tv/helix/moderation/moderators?broadcaster_id=${broadcaster_id}&user_id=${data.data[0].id}`, {
                         method: "POST",
@@ -105,12 +115,13 @@ async function onMessageHandler (target, context, msg, self) {
                         }
                     })
                 )
+                
             }else {
                 console.log("user is not authorized")
             }
         }
         // VIP ME COMMAND  
-        else if (commandName === "vip me") {
+        else if (commandName.toLowerCase() === "vip me") {
             if (approvedUsers.includes(context.username)){
             client.say(target, `/unmod ${context.username}`)
             client.say(target, `/vip ${context.username}`)
@@ -163,7 +174,7 @@ async function onMessageHandler (target, context, msg, self) {
         //Add Custom Command parser
         }
         else {
-            let channels = await getChannels().then((res)=>{
+            let channels = await getActiveChannels().then((res)=>{
                 return res
             })
             for(let i = 0; i < channels.length; i++){
@@ -279,8 +290,8 @@ app.get('/', (req, res)=>{
 app.get('/channels', (req, res) => {
     //res.send(client.getChannels())
     async function sendGetChannels(){
-        res.send(await getChannels())
-        console.log(await getChannels())
+        res.send(await getActiveChannels())
+        //console.log(await getChannels())
     }
     sendGetChannels()
 })
@@ -296,15 +307,29 @@ app.get('/user/:username', (req, res) => {
 })
 
 app.post('/auth', (req, res) =>{
-    auth_code = req.body.code
+    let userid;
+    async function getAuthUser(){
+        await getUserID(req.body.username).then((res) => {
+        //console.log(`This is the response: ${res}`); 
+        userid = res
+        if(userid){
+        }
+        else{
+            console.log("user does not exist yet")
+        }})
+    }
+    getAuthUser().then(async() => {
+        await setAuthCode(req.body.code, userid)
+    })
     profile_picture = req.body.profile_picture
     username = req.body.username
-    
+    auth_code = req.body.code
+    //getAuthCode(username)
     //console.log(req.body.code)
     //console.log(auth_code)
     //console.log(req.body.username)
-    addChannel(username)
-    getAndOrCreateUser(username, profile_picture)
+    //addChannel(username)
+    getAndOrCreateUser(username, profile_picture, auth_code)
     //console.log(client.getChannels())
 })
 
@@ -330,7 +355,7 @@ app.post('/part', (req, res) => {
     //     .catch(error => console.log(error))
     //     console.log("Parting Channel")
     // }
-    console.log("Parting Channel")
+    console.log("Parting Channel: " + `${req.body.username}`)
     delChannel(req.body.username)
 })
 
@@ -340,7 +365,7 @@ app.post('/join', (req, res) => {
     //     .catch(error => console.log(error))
     //     console.log("Joining Channel")
     // }
-    console.log("Joining Channel")
+    console.log("Joining Channel: " + `${req.body.username}`)
     addChannel(req.body.username)
 })
 
@@ -392,7 +417,7 @@ app.patch('/commands', (req,res) => {
 
 app.post('/userid', (req, res) => {
     async function awaitGetUserId(){
-        console.log(await getUserID(req.body.username))
+        //console.log(await getUserID(req.body.username))
         let resVariable;
         await getUserID(req.body.username).then((response) => resVariable = response)
         res.send(resVariable.toString())
@@ -400,7 +425,33 @@ app.post('/userid', (req, res) => {
     awaitGetUserId()
 })
 
-async function getAndOrCreateUser(username, profile_picture)
+async function setAuthCode(auth_code, userid){
+    try{
+        await pool.promise().query(`USE ${database}`)
+        const [rows, fields] = await pool.promise()
+            .query('UPDATE users SET auth_code = ? WHERE id = ?', [`${auth_code}`, userid]);
+    }catch(err){
+        console.log(err)
+    }
+}
+async function getAuthCode(username){
+    try{
+        await pool.promise().query(`USE ${database}`)
+        let userid = await getUserID(username)
+        .then((res) =>{
+            return res
+        })
+        const [rows, fields] = await pool.promise()
+            .query('SELECT auth_code FROM users WHERE id = ?', [userid]);
+            auth_code = rows[0].auth_code
+            console.log(rows)
+        return rows
+    }catch(err){
+        console.log(err)
+    }
+}
+
+async function getAndOrCreateUser(username, profile_picture, auth_code)
 {
     let userid = await getUserID(username)
     .then((res) =>{
@@ -411,10 +462,10 @@ async function getAndOrCreateUser(username, profile_picture)
         return
     }
     else{
-        createUser(username, profile_picture)
+        createUser(username, profile_picture, auth_code).then(()=>{addChannel(username)})
+        
     }
 }
-
 async function addChannel(username){
     // Old Code For Joining Channels
     // if(!opts.channels.includes(username)){
@@ -430,14 +481,15 @@ async function addChannel(username){
         .then(
             (response) => { return response }
         )
-        let channels = await getChannels()
+        let channels = await getActiveChannels()
         .then(
-            (response) => { console.log(response); return response }
+            (response) => { return response }
         )
         let channelCheck = false
         for(let i = 0; i < channels.length; i++){
             if(channels[i].user_id === userid){
                 channelCheck = true
+                client.join(username).catch((err)=>{console.log(err)})
             }
         }
         if (channelCheck === false){
@@ -451,7 +503,7 @@ async function addChannel(username){
     }
 }
 
-async function getChannels(){
+async function getActiveChannels(){
     try{
         await pool.promise().query(`USE ${database}`)
         const [rows, fields] = await pool.promise()
@@ -478,11 +530,11 @@ async function delChannel(username){
     }    
 }
 
-async function createUser(username, profile_picture){
+async function createUser(username, profile_picture, auth_code){
     try {
       await pool.promise().query(`USE ${database}`)
       
-      const [rows, fields] = await pool.promise().query('INSERT INTO users (username, profile_picture) VALUES (?,?)', [`${username.toString()}`, `${profile_picture.toString()}`]);
+      const [rows, fields] = await pool.promise().query('INSERT INTO users (username, profile_picture, auth_code) VALUES (?,?, ?)', [`${username.toString()}`, `${profile_picture.toString()}`, `${auth_code.toString()}`]);
       console.log(rows)
       console.log(fields)
     }
@@ -536,6 +588,8 @@ async function getUsername (userid){
 async function updateUser(){
 
 }
+
+//delUser("wack_ko")
 
 async function delUser(username){
     try{
@@ -782,7 +836,7 @@ async function delAllCommands(username){
     try{
         await pool.promise().query(`USE ${database}`)
         let commandids = []
-        await getCommands(username)
+        await getCommandsByUsername(username)
         .then((res) => {
             for(let i = 0; i < res.length; i++){
                commandids.push(res[i].id)

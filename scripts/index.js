@@ -105,6 +105,7 @@ function ProfilePicture(){
         location.href = "http://localhost:5500"
         setTimeout(() => {console.log("reloading"); location.reload()}, 5000)
     })
+    JoinChannelOnLogin()
     img.src = profilePicture;
     div.appendChild(img).setAttribute("class", "profile_picture")
 }    
@@ -163,12 +164,84 @@ async function GetChannels(){
             }
         }
         if(bool.includes("true")){
+
             joinButton.remove()
-        }else{
+            joinChannel()
+        }else{ 
             partButton.remove()
+            partChannel()
         }
     })
     
+}
+
+async function JoinChannelOnLogin(){ 
+    let userid = await fetch('http://localhost:3000/userid', {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: `{"username": "${getCookie("username")}"}`
+    })
+    .then((res) => {
+        return res.json()
+    })
+    .catch((error) => {
+        console.log(error)
+    })
+   console.log(userid)
+
+    await fetch('http://localhost:3000/channels', {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json"
+        },
+    })
+    .then((response) => response.json())
+    .then((json) => {
+        console.log(json)
+        let bool = [];
+        for(let i = 0; i < json.length; i++){
+            //console.log(json[i].user_id)
+            if(json[i].user_id === userid){
+                bool.push("true")
+            }else{
+                bool.push("false")
+            }
+        }
+        if(bool.includes("true")){
+            joinChannel()
+        }else{ 
+            partChannel()
+        }
+    })
+    
+}
+
+async function joinChannel(){
+    await fetch("http://localhost:3000/join",{
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: `{"username": "${getCookie("username")}"}`
+    })
+    .catch(error => {
+        console.log(error)
+    });
+}
+
+async function partChannel(){
+    await fetch("http://localhost:3000/part",{
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: `{"username": "${getCookie("username")}"}`
+    })
+    .catch(error => {
+        console.log(error)
+    });
 }
 
 function JoinAndPartChannel() {
