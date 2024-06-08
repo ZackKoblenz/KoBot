@@ -6,7 +6,7 @@ let username;
 let div = document.getElementById('profile_picture')
 let img = document.createElement('img')
 img.addEventListener('click', function(){
-    location.href = "http://localhost:5500/pages/profile.html"
+    location.href = "/pages/profile.html"
 })
 
 if(getCookie("accessToken")){
@@ -153,7 +153,7 @@ async function GetChannels(){
     })
     .then((response) => response.json())
     .then((json) => {
-        console.log(json)
+        //console.log(json)
         let bool = [];
         for(let i = 0; i < json.length; i++){
             //console.log(json[i].user_id)
@@ -318,71 +318,124 @@ async function getCommands(username){
         },
         body: `{"username": "${username}"}`
     }).then((res) => res.json())
-    .then((json) => {console.log(json); 
+    .then((json) => {
+        console.log(json); 
         let i = 0
         let commandnames = []
         for(const commands of json){
-            const divItem = document.createElement("div")
-            const listItem = document.createElement("tr")
-            listItem.appendChild(document.createElement("td"))
-            .innerHTML = `<button id="enable" class="enabled"><a id="Enabled${i}">Enabled</a></button>${commands.command_name}`
-            listItem.appendChild(document.createElement("td"))
-            .innerHTML = `<span><input type="text" value="${commands.action}" id="commandaction${i}"></span>
-            <button id="delete" class="delete"><a>Delete</a></button>
-            <button id="update${i}" class="update"><a>Update</a></button>
-            <select name="userlevel" id="userlevel${i}">
-                <option value="everyone" id="everyone${i}">Everyone</option>
-                <option value="subscriber" id="subscriber${i}">Subscriber</option>
-                <option value="vip" id="vip${i}">VIP</option>
-                <option value="moderator" id="moderator${i}">Moderator</option>
-                <option value="broadcaster" id="broadcaster${i}">Broadcaster</option>
-            </select>`
-            myList.appendChild(listItem)
-            //Delete Button Logic
-            const del = document.getElementsByClassName("delete")
-            //console.log(del)
-            del[i].addEventListener("click", () => {
-                delCommand(getCookie("username"),commands.command_name)
-                setTimeout(() => {
-                    console.log("reloading"); 
-                    location.href = "http://localhost:5500/pages/profile.html"
-                }, 750)
-            })
-            //Enabled Button Toggle
-            const enabled = document.getElementsByClassName("enabled")
-            const enable = document.getElementById(`Enabled${i}`)
-            const defaultValue = document.getElementById(`${commands.user_level}${i}`)
-            const commandInput = document.getElementById(`commandaction${i}`)
-            const userLevel = document.getElementById(`userlevel${i}`)
-            defaultValue.setAttribute("selected", "selected")
-            //console.log(enabled)
-            let isEnableToggled = false;
-            let isEditToggled = false;
-            if(commands.enabled === 1){
-                isEnableToggled = true
-                
-            }else {
-                enable.innerText = "Disabled"
-            }
-            
-            enabled[i].addEventListener("click", () => {
-                if(isEnableToggled){
-                    updateCommandEnabled(getCookie("username"), commands.command_name, 0);
+            if(i < 3){
+                const divItem = document.createElement("div")
+                const listItem = document.createElement("tr")
+                listItem.appendChild(document.createElement("td"))
+                .innerHTML = `<button id="enable" class="enabled"><a id="Enabled${i}">Enabled</a></button>${commands.command_name}`
+                listItem.appendChild(document.createElement("td"))
+                .innerHTML = 
+                `<span>
+                    <p type="text" value="${commands.action}" id="commandaction${i}">${commands.action}</p>
+                </span>
+                <div>
+                    <input type="text" placeholder="Whitelist User">
+                    <button id="enable" class="enabled">
+                        <a id="Add${i}">Add</a>
+                    </button>
+                </div>
+                <div>
+                    <ul>
+                        <li>test</li>
+                    </ul>
+                </div>`
+                myList.appendChild(listItem)
+                //Enabled Button Toggle
+                const enabled = document.getElementsByClassName("enabled")
+                const enable = document.getElementById(`Enabled${i}`)
+                //console.log(enabled)
+                let isEnableToggled = false;
+                let isEditToggled = false;
+                if(commands.enabled === 1){
+                    isEnableToggled = true
+                }else {
                     enable.innerText = "Disabled"
                 }
-                else{
-                    updateCommandEnabled(getCookie("username"), commands.command_name, 1);
-                    enable.innerText = "Enabled"
-                    
-                }
-                isEnableToggled = !isEnableToggled;
-            })
-            //Update Button Submit
+            
+                enabled[i].addEventListener("click", () => {
+                    if(isEnableToggled){
+                        updateCommandEnabled(getCookie("username"), commands.command_name, 0);
+                        enable.innerText = "Disabled"
+                    }
+                    else{
+                        updateCommandEnabled(getCookie("username"), commands.command_name, 1);
+                        enable.innerText = "Enabled"
+                        
+                    }
+                    isEnableToggled = !isEnableToggled;
+                })
 
-            const update = document.getElementById(`update${i}`)
-            update.addEventListener("click", () => {
-                updateCommand(getCookie("username"), commands.command_name, commandInput.value, userLevel.value, commands.enabled)
-            })
+                
+
+            }
+            else{
+                const divItem = document.createElement("div")
+                const listItem = document.createElement("tr")
+                listItem.appendChild(document.createElement("td"))
+                .innerHTML = `<button id="enable" class="enabled"><a id="Enabled${i}">Enabled</a></button>${commands.command_name}`
+                listItem.appendChild(document.createElement("td"))
+                .innerHTML = `<span><input type="text" value="${commands.action}" id="commandaction${i}"></span>
+                <button id="delete" class="delete"><a>Delete</a></button>
+                <button id="update${i}" class="update"><a>Update</a></button>
+                <select name="userlevel" id="userlevel${i}">
+                    <option value="everyone" id="everyone${i}">Everyone</option>
+                    <option value="subscriber" id="subscriber${i}">Subscriber</option>
+                    <option value="vip" id="vip${i}">VIP</option>
+                    <option value="moderator" id="moderator${i}">Moderator</option>
+                    <option value="broadcaster" id="broadcaster${i}">Broadcaster</option>
+                </select>`
+                myList.appendChild(listItem)
+                //Delete Button Logic
+                const del = document.getElementsByClassName("delete")
+                //console.log(del)
+                del[i - 3].addEventListener("click", () => {
+                    delCommand(getCookie("username"),commands.command_name)
+                    setTimeout(() => {
+                        console.log("reloading"); 
+                        location.href = "http://localhost:5500/pages/profile.html"
+                    }, 750)
+                })
+                //Enabled Button Toggle
+                const enabled = document.getElementsByClassName("enabled")
+                const enable = document.getElementById(`Enabled${i}`)
+                const defaultValue = document.getElementById(`${commands.user_level}${i}`)
+                const commandInput = document.getElementById(`commandaction${i}`)
+                const userLevel = document.getElementById(`userlevel${i}`)
+                defaultValue.setAttribute("selected", "selected")
+                //console.log(enabled)
+                let isEnableToggled = false;
+                let isEditToggled = false;
+                if(commands.enabled === 1){
+                    isEnableToggled = true
+                }else {
+                    enable.innerText = "Disabled"
+                }
+                
+                enabled[i].addEventListener("click", () => {
+                    if(isEnableToggled){
+                        updateCommandEnabled(getCookie("username"), commands.command_name, 0);
+                        enable.innerText = "Disabled"
+                    }
+                    else{
+                        updateCommandEnabled(getCookie("username"), commands.command_name, 1);
+                        enable.innerText = "Enabled"
+                        
+                    }
+                    isEnableToggled = !isEnableToggled;
+                })
+                //Update Button Submit
+
+                const update = document.getElementById(`update${i}`)
+                update.addEventListener("click", () => {
+                    updateCommand(getCookie("username"), commands.command_name, commandInput.value, userLevel.value, commands.enabled)
+                })
+            }
+            
 
             //Edity Button Toggle
             // const edit = document.getElementsByClassName("edit")

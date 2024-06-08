@@ -29,7 +29,7 @@ let channelName;
 // Create a client with our options
 const client = new tmi.client(opts);
 //Replace with Database Connection
-let approvedUsers = ["zack_ko", "wack_ko"]
+//let approvedUsers = ["zack_ko", "wack_ko"]
 // Register our event handlers (defined below)
 client.on('message', getChannel)
 client.on('message', onMessageHandler);
@@ -42,14 +42,16 @@ async function Connect(){
 
 Connect()
 
+async function CheckApprovedUsers(users){
 
+}
 // Called every time a message comes in
 async function onMessageHandler (target, context, msg, self) {
     if (self) { return; } // Ignore messages from the bot
     // Remove whitespace from chat message
     const commandName = msg.trim();
     getAuthCode(target.slice(1))
-    //let approvedUsers = await getWhitelist(channelName)
+    let approvedUsers = await getWhitelist(target.slice(1))
     // If the command is known, let's execute it
     async function CommandModules (){
         let userid = await getUserID(target.split('#')[1]).then((res)=>{console.log(res) ;return res})
@@ -122,55 +124,106 @@ async function onMessageHandler (target, context, msg, self) {
         }
         // VIP ME COMMAND  
         else if (commandName.toLowerCase() === "vip me") {
-            if (approvedUsers.includes(context.username)){
-            client.say(target, `/unmod ${context.username}`)
-            client.say(target, `/vip ${context.username}`)
+            for(let i = 0; i < approvedUsers.length; i++){
+                if(approvedUsers[i].username === context.username){
+                    client.say(target, `/unmod ${context.username}`)
+                    client.say(target, `/vip ${context.username}`)
 
-            let data;
-            let broadcaster_id
-            await fetch(`https://api.twitch.tv/helix/users?login=${context.username}`, {
-                method: "GET",
-                headers: {
-                    "Authorization": `Bearer ${opts.identity.password}`,
-                    "Client-ID": clientID
-                }
-            })
-            .then((response) => response.json())
-            .then((json) => data = json)
-            //.then(() => console.log(data))
+                    let data;
+                    let broadcaster_id
+                    await fetch(`https://api.twitch.tv/helix/users?login=${context.username}`, {
+                        method: "GET",
+                        headers: {
+                            "Authorization": `Bearer ${opts.identity.password}`,
+                            "Client-ID": clientID
+                        }
+                    })
+                    .then((response) => response.json())
+                    .then((json) => data = json)
+                    //.then(() => console.log(data))
 
-            await fetch(`https://api.twitch.tv/helix/users?login=${channelName}`, {
-                method: "GET",
-                headers: {
-                    "Authorization": `Bearer ${opts.identity.password}`,
-                    "Client-ID": clientID
+                    await fetch(`https://api.twitch.tv/helix/users?login=${channelName}`, {
+                        method: "GET",
+                        headers: {
+                            "Authorization": `Bearer ${opts.identity.password}`,
+                            "Client-ID": clientID
+                        }
+                    })
+                    .then((response) => response.json())
+                    .then((json) => broadcaster_id = json.data[0].id)
+                    //.then(() => console.log(broadcaster_id))
+                    // console.log(broadcaster_id)
+                    // console.log(context.username)
+                    // console.log(data.data[0].id)
+                // Unmod User
+                    await fetch(`https://api.twitch.tv/helix/moderation/moderators?broadcaster_id=${broadcaster_id}&user_id=${data.data[0].id}`, {
+                        method: "DELETE",
+                        headers: {
+                            "Authorization": `Bearer ${auth_code}`,
+                            "Client-ID": clientID
+                        }
+                    })
+                // VIP User
+                    .then(
+                        await fetch(`https://api.twitch.tv/helix/channels/vips?broadcaster_id=${broadcaster_id}&user_id=${data.data[0].id}`, {
+                            method: "POST",
+                            headers: {
+                                "Authorization": `Bearer ${auth_code}`,
+                                "Client-ID": clientID
+                            }
+                        })
+                    )
                 }
-            })
-            .then((response) => response.json())
-            .then((json) => broadcaster_id = json.data[0].id)
-            //.then(() => console.log(broadcaster_id))
-            // console.log(broadcaster_id)
-            // console.log(context.username)
-            // console.log(data.data[0].id)
-        // Unmod User
-            await fetch(`https://api.twitch.tv/helix/moderation/moderators?broadcaster_id=${broadcaster_id}&user_id=${data.data[0].id}`, {
-                method: "DELETE",
-                headers: {
-                    "Authorization": `Bearer ${auth_code}`,
-                    "Client-ID": clientID
-                }
-            })
-        // VIP User
-            .then(
-                await fetch(`https://api.twitch.tv/helix/channels/vips?broadcaster_id=${broadcaster_id}&user_id=${data.data[0].id}`, {
-                    method: "POST",
-                    headers: {
-                        "Authorization": `Bearer ${auth_code}`,
-                        "Client-ID": clientID
-                    }
-                })
-            )
-        }
+            }
+            // if (approvedUsers.includes(context.username)){
+            //     client.say(target, `/unmod ${context.username}`)
+            //     client.say(target, `/vip ${context.username}`)
+
+            //     let data;
+            //     let broadcaster_id
+            //     await fetch(`https://api.twitch.tv/helix/users?login=${context.username}`, {
+            //         method: "GET",
+            //         headers: {
+            //             "Authorization": `Bearer ${opts.identity.password}`,
+            //             "Client-ID": clientID
+            //         }
+            //     })
+            //     .then((response) => response.json())
+            //     .then((json) => data = json)
+            //     //.then(() => console.log(data))
+
+            //     await fetch(`https://api.twitch.tv/helix/users?login=${channelName}`, {
+            //         method: "GET",
+            //         headers: {
+            //             "Authorization": `Bearer ${opts.identity.password}`,
+            //             "Client-ID": clientID
+            //         }
+            //     })
+            //     .then((response) => response.json())
+            //     .then((json) => broadcaster_id = json.data[0].id)
+            //     //.then(() => console.log(broadcaster_id))
+            //     // console.log(broadcaster_id)
+            //     // console.log(context.username)
+            //     // console.log(data.data[0].id)
+            // // Unmod User
+            //     await fetch(`https://api.twitch.tv/helix/moderation/moderators?broadcaster_id=${broadcaster_id}&user_id=${data.data[0].id}`, {
+            //         method: "DELETE",
+            //         headers: {
+            //             "Authorization": `Bearer ${auth_code}`,
+            //             "Client-ID": clientID
+            //         }
+            //     })
+            // // VIP User
+            //     .then(
+            //         await fetch(`https://api.twitch.tv/helix/channels/vips?broadcaster_id=${broadcaster_id}&user_id=${data.data[0].id}`, {
+            //             method: "POST",
+            //             headers: {
+            //                 "Authorization": `Bearer ${auth_code}`,
+            //                 "Client-ID": clientID
+            //             }
+            //         })
+            //     )
+            // }
         //Add Custom Command parser
         }
         else {
@@ -533,11 +586,17 @@ async function delChannel(username){
     }    
 }
 
+
 async function createUser(username, profile_picture, auth_code){
     try {
       await pool.promise().query(`USE ${database}`)
       
-      const [rows, fields] = await pool.promise().query('INSERT INTO users (username, profile_picture, auth_code) VALUES (?,?, ?)', [`${username.toString()}`, `${profile_picture.toString()}`, `${auth_code.toString()}`]);
+      const [rows, fields] = await pool.promise().query('INSERT INTO users (username, profile_picture, auth_code) VALUES (?,?,?)', [`${username.toString()}`, `${profile_picture.toString()}`, `${auth_code.toString()}`]);
+      //Add !dice, mod me, and vip me commands to commands for user on create user.
+      //That way the commands can be whitelisted
+      addCommand(username, "mod me", "This command allows a whitelisted user to mod themselves", "broadcaster", 1)
+      addCommand(username, "vip me", "This command allows a whitelsited user to VIP themselves", "broadcaster", 1)
+      addCommand(username, "!dice", "Allows user to roll a specified amount of dice with specified sides", "everyone", 1)
       console.log(rows)
       console.log(fields)
     }
@@ -545,6 +604,7 @@ async function createUser(username, profile_picture, auth_code){
       console.log(err.sqlMessage)
     }
   }
+
 
 async function getProfilePic(username){
     try{
@@ -610,6 +670,8 @@ async function delUser(username){
     }
 }
 //getUserID("zack_ko").then((res)=> console.log(res))
+
+addWhitelist("wack_ko", "!command","zack_ko")
 
 async function addWhitelist(username, command, whitelisted){
     try{
@@ -854,3 +916,4 @@ async function delAllCommands(username){
         console.log(err)
     }
 }
+
