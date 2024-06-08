@@ -46,7 +46,7 @@ if(location.href === "http://localhost:5500/pages/profile.html"){
         let command = document.getElementById("commandname")
         let action = document.getElementById("action")
         let userlevel = document.getElementById("userlevel")
-        addCommand(getCookie("username"), command.value, action.value, userlevel.value)
+        addCommand(getCookie("username"),`${command.value}`, action.value, userlevel.value)
         setTimeout(() => {console.log("reloading"); location.href = "http://localhost:5500/pages/profile.html"}, 750)
     })
 }
@@ -451,3 +451,16 @@ async function addCommand(username, command, action, userlevel){
         }
     }
  }
+
+function disableSpaces(input) {
+    return input.replace(/ /g, '');
+  }
+  
+  const input = document.querySelector('input');
+  
+  input.addEventListener('input', () => {
+    input.value = disableSpaces(input.value);
+    if(input.value.length === 1 && input.value.charAt(0)!="!"){
+        input.value = "!" + input.value
+    }
+});
