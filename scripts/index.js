@@ -109,7 +109,7 @@ function ProfilePicture(){
         location.href = "/"
         setTimeout(() => {console.log("reloading"); location.reload()}, 5000)
     })
-    JoinChannelOnLogin()
+    //JoinChannelOnLogin()
     img.src = profilePicture;
     div.appendChild(img).setAttribute("class", "profile_picture")
 }    
@@ -170,10 +170,10 @@ async function GetChannels(){
         if(bool.includes("true")){
 
             joinButton.remove()
-            joinChannel()
+            //joinChannel()
         }else{ 
             partButton.remove()
-            partChannel()
+            //partChannel()
         }
     })
     
@@ -512,15 +512,40 @@ async function getWhitelist(username){
         for(let i = 0; i < json.length; i++){
             console.log(json[i])
             let ul = document.getElementById(`whitelisted${json[i].command_id}`)
-            let div = document.createElement("div")
-            div.innerText = `${json[i].username}`
+            let div = document.createElement("span")
+            div.innerHTML = `<span id="username${i}">${json[i].username}</span><span><button class="deletewhitelist"><a>Delete</a></button></span>`
+            const del = document.getElementsByClassName("deletewhitelist")
             ul.appendChild(div)
+            const username = document.getElementById(`username${i}`)
+            del[i].addEventListener("click", () => {
+                delWhitelist(getCookie("username"), json[i].command_id, json[i].username)
+                .then(
+                    setTimeout(() => {
+                        console.log("reloading"); 
+                        location.href = "/pages/profile.html"
+                    }, 750)
+                )
+            })
         }
         
         })
 }
 
-
+async function getCommandById(commandid){
+    await fetch("http://localhost:3000/commands/get", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: `{"commandid": "${commandid}"}`
+    })
+    .then((res) => {
+       res.json()
+    })
+    .then((json) => {
+        console.log(json)
+    })
+}
 
 async function addCommand(username, command, action, userlevel){
     console.log("add command")

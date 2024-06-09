@@ -36,11 +36,11 @@ client.on('message', onMessageHandler);
 client.on('connected', onConnectedHandler);
 
 // Connect to Twitch:
-async function Connect(){
-    await client.connect();
-}
 
-Connect()
+
+
+
+
 
 async function CheckApprovedUsers(users){
 
@@ -457,6 +457,13 @@ app.post('/commands', (req,res) => {
     })
 })
 
+app.post('/commands/get', (req,res) => {
+    getCommandById(req.body.commandid)
+    .then((response) => {
+        res.send(response)
+    })
+})
+
 app.post('/commands/add', (req,res) => {
     console.log("add command")
     addCommand(req.body.username, req.body.command, req.body.action, req.body.userlevel)
@@ -518,6 +525,18 @@ app.post('/userid', (req, res) => {
     }
     awaitGetUserId()
 })
+
+async function JoinAllChannelsOnInit(){
+    await client.connect();
+    const activeChannels = await getActiveChannels()
+    for(let i = 0; i < activeChannels.length; i++){
+        getUsername(activeChannels[i].user_id).then(res => {
+            console.log(`joining channel: ${res[0].username}`); addChannel(res[0].username)
+        })
+    }
+}
+
+JoinAllChannelsOnInit()
 
 async function setAuthCode(auth_code, userid){
     try{
@@ -680,6 +699,7 @@ async function getUsername (userid){
         await pool.promise().query(`USE ${database}`)
         const [rows, fields] = await pool.promise()
         .query('SELECT username FROM users WHERE id = ?', [userid])
+        return rows
     }
     catch (err){
         console.log(err)
@@ -740,7 +760,15 @@ async function delWhitelist(username, command){
 async function delWhitelistedUser(username, command, whitelist){
     try{
         await pool.promise().query(`USE ${database}`)
-        let commandid = await getCommandID(username, command)
+        command = parseInt(command)
+        let commandid;
+        if(typeof command === "number"){
+            commandid = command
+        }
+        else{
+            commandid = await getCommandID(username, command)
+        }
+        
         let userid = await getUserID(username)
         const [rows, fields] = await pool.promise().query('DELETE FROM approved_users WHERE command_id = ? AND streamer_id = ? AND username = ?', [commandid, userid, whitelist])
 
@@ -814,6 +842,19 @@ async function getCommandID(username, command){
     }
     catch (err){
         console.log(err)
+    }
+}
+
+async function getCommandById(commandid){
+    try{
+        console.log(commandid)
+        await pool.promise().query(`USE ${database}`)
+        const [rows, fields] = await pool.promise().query('SELECT command_name FROM commands WHERE id=?', [commandid])
+        console.log(rows)
+        return rows[0]
+    }
+    catch(err){
+        console.log(err.sqlMessage)
     }
 }
 
