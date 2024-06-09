@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ko Bot</title>
+    <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+    <nav class="nav__item">
+        <div class="flex-container">
+            <div id="profile_picture" class="nav__item"></div>
+            <ul>
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/pages/features.html">Features</a>
+                </li>
+                <li>
+                    <a href="/pages/contact.html">Contact</a>
+                </li>
+            </ul>
+            <div id="button" class="nav__item">
+                <a href="https://id.twitch.tv/oauth2/authorize?response_type=token&scope=chat:read+chat:edit+channel:manage:moderators+channel:manage:vips+user:read:email&client_id=vkfu4c51hsx801w76r6fmhudt0x685&redirect_uri=http://localhost:5500">Connect with Twitch</a>
+            </div>
+            
+            <div id="signOutButton">
+                <!-- <button id="signOut"><a>Sign Out</a></button> -->
+            </div>
+        </div>
+    </nav>
+    <p>Features Live Here</p>
+    <ul class="ul">
+        <li class="list">· mod me</li>
+        <li class="list">· vip me</li>
+    </ul>
+    <input type="text" class="search" name="search" placeholder="Search...">
+</body>
+<script src="../scripts/index.js"></script>
+</html>
