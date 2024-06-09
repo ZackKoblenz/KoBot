@@ -51,7 +51,7 @@ async function onMessageHandler (target, context, msg, self) {
     // Remove whitespace from chat message
     const commandName = msg.trim();
     getAuthCode(target.slice(1))
-    let approvedUsers = await getWhitelist(target.slice(1))
+    let approvedUsersObjects = await getWhitelist(target.slice(1))
     // If the command is known, let's execute it
     async function CommandModules (){
         let userid = await getUserID(target.split('#')[1]).then((res)=>{console.log(res) ;return res})
@@ -70,6 +70,14 @@ async function onMessageHandler (target, context, msg, self) {
         // MOD ME COMMAND
         else if (commandName.toLowerCase() === `mod me`) {
            // console.log("mod me ")
+           let approvedUsers = []
+           let commandid = await getCommandID(target.slice(1), "mod me")
+           console.log(approvedUsersObjects)
+           for(let i = 0; i < approvedUsersObjects.length; i++){
+            if(approvedUsersObjects[i].command_id === commandid){
+                approvedUsers.push(approvedUsersObjects[i].username)
+            }
+           }
             if (approvedUsers.includes(context.username)){
                 //client.say(target, `/mod ${context.username}`)
                 let data;
@@ -124,8 +132,17 @@ async function onMessageHandler (target, context, msg, self) {
         }
         // VIP ME COMMAND  
         else if (commandName.toLowerCase() === "vip me") {
-            for(let i = 0; i < approvedUsers.length; i++){
-                if(approvedUsers[i].username === context.username){
+            let approvedUsers = []
+            let approvedUsersObjects = await getWhitelist(target.slice(1))
+            console.log(approvedUsersObjects)
+            let commandid = await getCommandID(target.slice(1), "vip me")
+            for(let i = 0; i < approvedUsersObjects.length; i++){
+                if(approvedUsersObjects[i].command_id === commandid){
+                    approvedUsers.push(approvedUsersObjects[i].username)
+                }
+                
+            }
+                if(approvedUsers.includes(context.username)){
                     client.say(target, `/unmod ${context.username}`)
                     client.say(target, `/vip ${context.username}`)
 
@@ -174,7 +191,10 @@ async function onMessageHandler (target, context, msg, self) {
                         })
                     )
                 }
-            }
+                else{
+                    console.log("user is not authorized")
+                }
+            
             // if (approvedUsers.includes(context.username)){
             //     client.say(target, `/unmod ${context.username}`)
             //     client.say(target, `/vip ${context.username}`)
@@ -471,6 +491,24 @@ app.patch('/commands', (req,res) => {
     updateCommand(req.body.username, req.body.command, req.body.action)
 })
 
+app.post('/commands/whitelist/get', (req, res) => {
+    async function awaitGetWhitelist(){
+        let resVariable;
+        await getWhitelist(req.body.username).then((response) => {resVariable = response})
+        res.send(resVariable)
+    }
+    awaitGetWhitelist()
+    
+})
+
+app.post('/commands/whitelist/add', (req,res) => {
+    addWhitelist(req.body.username, req.body.command, req.body.whitelist)
+})
+
+app.delete('/commands/whitelist/delete', (req,res) => {
+    delWhitelistedUser(req.body.username, req.body.command, req.body.whitelist)
+})
+
 app.post('/userid', (req, res) => {
     async function awaitGetUserId(){
         //console.log(await getUserID(req.body.username))
@@ -652,7 +690,7 @@ async function updateUser(){
 
 }
 
-//delUser("wack_ko")
+
 
 async function delUser(username){
     try{
@@ -663,6 +701,7 @@ async function delUser(username){
         )
         await delAllWhitelist(username)
         await delAllCommands(username)
+        await delChannel(username)
         const [rows, fields] = await pool.promise().query('DELETE FROM users WHERE id = ?', [userid])
     }
     catch(err){
@@ -671,7 +710,6 @@ async function delUser(username){
 }
 //getUserID("zack_ko").then((res)=> console.log(res))
 
-addWhitelist("wack_ko", "!command","zack_ko")
 
 async function addWhitelist(username, command, whitelisted){
     try{
@@ -684,7 +722,7 @@ async function addWhitelist(username, command, whitelisted){
         const [rows, fields] = await pool.promise().query('INSERT INTO approved_users (streamer_id, command_id, username) VALUES (?,?,?)', [userid, commandid, whitelisted])
     }
     catch(err){
-        console.log(err)
+        console.log(err.sqlMessage)
     }
 }
 
@@ -699,6 +737,18 @@ async function delWhitelist(username, command){
     }
 }
 
+async function delWhitelistedUser(username, command, whitelist){
+    try{
+        await pool.promise().query(`USE ${database}`)
+        let commandid = await getCommandID(username, command)
+        let userid = await getUserID(username)
+        const [rows, fields] = await pool.promise().query('DELETE FROM approved_users WHERE command_id = ? AND streamer_id = ? AND username = ?', [commandid, userid, whitelist])
+
+    }
+    catch (err) {
+        console.log(err.sqlMessage)
+    }
+}
 
 async function delAllWhitelist(username){
     try{
@@ -724,7 +774,7 @@ async function getWhitelist(username){
         await pool.promise().query(`USE ${database}`)
         let userid = await getUserID(username)
         .then(
-            (response) => { return response}
+            (response) => {return response}
         )
         const [rows, fields] = await pool.promise().query('SELECT * FROM approved_users WHERE streamer_id = ?', [userid])
         return rows

@@ -39,7 +39,11 @@ if(location.pathname === "/pages/profile.html"){
 
     GetChannels()
     JoinAndPartChannel()
-    getCommands(getCookie("username"))
+    getCommands(getCookie("username")).then(() => {
+        getWhitelist(getCookie("username"))
+    })
+    
+
     let commandForm = document.getElementById("commandForm")
     commandForm.addEventListener("submit", (e) => {
         e.preventDefault();
@@ -334,20 +338,20 @@ async function getCommands(username){
                     <p type="text" value="${commands.action}" id="commandaction${i}">${commands.action}</p>
                 </span>
                 <div>
-                    <input type="text" placeholder="Whitelist User">
-                    <button>
-                        <a id="Add${i}">Add</a>
+                    <input type="text" placeholder="Whitelist User" class="whitelist" id="whitelist${i}">
+                    <button class="add">
+                        <a id="add${i}">Add</a>
                     </button>
                 </div>
                 <div>
-                    <ul>
-                        <li>test</li>
+                    <ul id="whitelisted${commands.id}">
                     </ul>
                 </div>`
                 myList.appendChild(listItem)
                 //Enabled Button Toggle
                 const enabled = document.getElementsByClassName("enabled")
                 const enable = document.getElementById(`Enabled${i}`)
+                
                 //console.log(enabled)
                 let isEnableToggled = false;
                 let isEditToggled = false;
@@ -369,8 +373,19 @@ async function getCommands(username){
                     }
                     isEnableToggled = !isEnableToggled;
                 })
-
+                const add = document.getElementsByClassName("add")
+                const whitelist = document.getElementById(`whitelist${i}`)
+                const delWhitelist = document.getElementById(`whitelisted${i}`)
+                add[i].addEventListener("click", () => {
+                    console.log(whitelist.value)
+                    addWhitelist(getCookie("username"), commands.command_name, whitelist.value)
+                    setTimeout(() => {
+                        console.log("reloading"); 
+                        location.href = "/pages/profile.html"
+                    }, 750)
+                })
                 
+
 
             }
             else{
@@ -462,6 +477,50 @@ async function getCommands(username){
 
     })
 }
+
+
+async function addWhitelist(username, command, whitelist){
+    await fetch('http://localhost:3000/commands/whitelist/add', {
+        method: "POST",
+        headers: {
+            "Content-type": "application/json"
+        },
+        body: `{"username": "${username}", "command": "${command}", "whitelist": "${whitelist}"}`
+    })
+}
+
+async function delWhitelist(username, command, whitelist){
+    await fetch('http://localhost:3000/commands/whitelist/delete', {
+        method: "DELETE",
+        headers: {
+            "Content-type": "application/json"
+        },
+        body: `{"username": "${username}", "command": "${command}", "whitelist": "${whitelist}"}`
+    })
+}
+
+async function getWhitelist(username){
+    await fetch("http://localhost:3000/commands/whitelist/get", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: `{"username": "${username}"}`
+    })
+    .then((res) => res.json())
+    .then((json) => {
+        for(let i = 0; i < json.length; i++){
+            console.log(json[i])
+            let ul = document.getElementById(`whitelisted${json[i].command_id}`)
+            let div = document.createElement("div")
+            div.innerText = `${json[i].username}`
+            ul.appendChild(div)
+        }
+        
+        })
+}
+
+
 
 async function addCommand(username, command, action, userlevel){
     console.log("add command")
