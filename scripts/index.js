@@ -30,12 +30,12 @@ if (document.location.hash && !getCookie("accessToken")) {
         setTimeout(() => {
             ProfilePicture()
         }, 500)
-        setTimeout(() => {console.log("reloading"); location.href = "http://localhost:5500"}, 750)
+        setTimeout(() => {console.log("reloading"); location.href = "/"}, 750)
     }
 }
 
 //URL will need to be changed to reflect live URL
-if(location.href === "http://localhost:5500/pages/profile.html"){
+if(location.pathname === "/pages/profile.html"){
 
     GetChannels()
     JoinAndPartChannel()
@@ -47,7 +47,7 @@ if(location.href === "http://localhost:5500/pages/profile.html"){
         let action = document.getElementById("action")
         let userlevel = document.getElementById("userlevel")
         addCommand(getCookie("username"),`${command.value}`, action.value, userlevel.value)
-        setTimeout(() => {console.log("reloading"); location.href = "http://localhost:5500/pages/profile.html"}, 750)
+        setTimeout(() => {console.log("reloading"); location.href = "/pages/profile.html"}, 750)
     })
 }
 
@@ -102,7 +102,7 @@ function ProfilePicture(){
     signOut.addEventListener("click", function() {
         document.cookie = "accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;"
         document.cookie = "profilePicture=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;"
-        location.href = "http://localhost:5500"
+        location.href = "/"
         setTimeout(() => {console.log("reloading"); location.reload()}, 5000)
     })
     JoinChannelOnLogin()
@@ -335,7 +335,7 @@ async function getCommands(username){
                 </span>
                 <div>
                     <input type="text" placeholder="Whitelist User">
-                    <button id="enable" class="enabled">
+                    <button>
                         <a id="Add${i}">Add</a>
                     </button>
                 </div>
@@ -397,7 +397,7 @@ async function getCommands(username){
                     delCommand(getCookie("username"),commands.command_name)
                     setTimeout(() => {
                         console.log("reloading"); 
-                        location.href = "http://localhost:5500/pages/profile.html"
+                        location.href = "/pages/profile.html"
                     }, 750)
                 })
                 //Enabled Button Toggle
