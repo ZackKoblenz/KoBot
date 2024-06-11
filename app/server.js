@@ -5,6 +5,7 @@ const app = express()
 const bodyParser = require('body-parser')
 const cors = require('cors')
 const port = 3000
+const jwt = require('jsonwebtoken')
 let auth_code; //ONLY DEFINED ON LOG IN - FIX BUG 001
 let profile_picture;
 const tmi = require('tmi.js');
@@ -70,65 +71,82 @@ async function onMessageHandler (target, context, msg, self) {
         // MOD ME COMMAND
         else if (commandName.toLowerCase() === `mod me`) {
            // console.log("mod me ")
-           let approvedUsers = []
-           let commandid = await getCommandID(target.slice(1), "mod me")
-           console.log(approvedUsersObjects)
-           for(let i = 0; i < approvedUsersObjects.length; i++){
-            if(approvedUsersObjects[i].command_id === commandid){
-                approvedUsers.push(approvedUsersObjects[i].username)
+            let approvedUsers = []
+            let approvedUsersObjects = await getWhitelist(target.slice(1))
+            console.log(approvedUsersObjects)
+            let commandid = await getCommandID(target.slice(1), "vip me")
+            let channels = await getActiveChannels().then((res) => {
+                return res
+            })
+            let commands = [];
+            for(let i = 0; i < approvedUsersObjects.length; i++){
+                if(approvedUsersObjects[i].command_id === commandid){
+                    approvedUsers.push(approvedUsersObjects[i].username)
+                }
             }
-           }
-            if (approvedUsers.includes(context.username)){
-                //client.say(target, `/mod ${context.username}`)
-                let data;
-                let broadcaster_id
-
-                await fetch(`https://api.twitch.tv/helix/users?login=${context.username}`, {
-                    method: "GET",
-                    headers: {
-                        "Authorization": `Bearer ${opts.identity.password}`,
-                        "Client-ID": clientID
-                    }
-                })
-                .then((response) => response.json())
-                .then((json) => {data = json})
-                //Get Broadcaster ID
-                await fetch(`https://api.twitch.tv/helix/users?login=${channelName}`, {
-                    method: "GET",
-                    headers: {
-                        "Authorization": `Bearer ${opts.identity.password}`,
-                        "Client-ID": clientID
-                    }
-                })
-                .then((response) => response.json())
-                .then((json) => { broadcaster_id = json.data[0].id})
-
-                await fetch(`https://api.twitch.tv/helix/channels/vips?broadcaster_id=${broadcaster_id}&user_id=${data.data[0].id}`, {
-                    method: "DELETE",
-                    headers: {
-                        "Authorization": `Bearer ${auth_code}`,
-                        "Client-ID": clientID
-                    }
-                })
-                .then((res) => {
-                    //console.log(res)
-                })
-                // .then((json) => {
-                //     console.log(json)
-                // })
-                .then(
-                    await fetch(`https://api.twitch.tv/helix/moderation/moderators?broadcaster_id=${broadcaster_id}&user_id=${data.data[0].id}`, {
-                        method: "POST",
-                        headers: {
-                            "Authorization": `Bearer ${auth_code}`,
-                            "Client-ID": clientID
-                        }
-                    })
-                )
+            for(let i = 0; i < channels.length; i++){
+                commands.push(await getCommandsById(`${channels[i].user_id}`).then((res) => {return res}))
                 
-            }else {
-                console.log("user is not authorized")
             }
+            for(let i = 0; i < commands.length; i++){
+                for(let j = 0; j < commands[i].length; j++){
+                    console.log(commands[i][j])
+                    if(commands[i][j].enabled === 1 && commands[i][j].command_name.toLowerCase() === "mod me"){
+                        if (approvedUsers.includes(context.username)){
+                            //client.say(target, `/mod ${context.username}`)
+                            let data;
+                            let broadcaster_id
+            
+                            await fetch(`https://api.twitch.tv/helix/users?login=${context.username}`, {
+                                method: "GET",
+                                headers: {
+                                    "Authorization": `Bearer ${opts.identity.password}`,
+                                    "Client-ID": clientID
+                                }
+                            })
+                            .then((response) => response.json())
+                            .then((json) => {data = json})
+                            //Get Broadcaster ID
+                            await fetch(`https://api.twitch.tv/helix/users?login=${channelName}`, {
+                                method: "GET",
+                                headers: {
+                                    "Authorization": `Bearer ${opts.identity.password}`,
+                                    "Client-ID": clientID
+                                }
+                            })
+                            .then((response) => response.json())
+                            .then((json) => { broadcaster_id = json.data[0].id})
+            
+                            await fetch(`https://api.twitch.tv/helix/channels/vips?broadcaster_id=${broadcaster_id}&user_id=${data.data[0].id}`, {
+                                method: "DELETE",
+                                headers: {
+                                    "Authorization": `Bearer ${auth_code}`,
+                                    "Client-ID": clientID
+                                }
+                            })
+                            .then((res) => {
+                                //console.log(res)
+                            })
+                            // .then((json) => {
+                            //     console.log(json)
+                            // })
+                            .then(
+                                await fetch(`https://api.twitch.tv/helix/moderation/moderators?broadcaster_id=${broadcaster_id}&user_id=${data.data[0].id}`, {
+                                    method: "POST",
+                                    headers: {
+                                        "Authorization": `Bearer ${auth_code}`,
+                                        "Client-ID": clientID
+                                    }
+                                })
+                            )
+                            
+                        }else {
+                            console.log("user is not authorized")
+                        }
+                    }
+                }
+            }
+            
         }
         // VIP ME COMMAND  
         else if (commandName.toLowerCase() === "vip me") {
@@ -136,65 +154,79 @@ async function onMessageHandler (target, context, msg, self) {
             let approvedUsersObjects = await getWhitelist(target.slice(1))
             console.log(approvedUsersObjects)
             let commandid = await getCommandID(target.slice(1), "vip me")
+            let channels = await getActiveChannels().then((res) => {
+                return res
+            })
+            let commands = [];
             for(let i = 0; i < approvedUsersObjects.length; i++){
                 if(approvedUsersObjects[i].command_id === commandid){
                     approvedUsers.push(approvedUsersObjects[i].username)
                 }
+            }
+            for(let i = 0; i < channels.length; i++){
+                commands.push(await getCommandsById(`${channels[i].user_id}`).then((res) => {return res}))
                 
             }
-                if(approvedUsers.includes(context.username)){
-                    client.say(target, `/unmod ${context.username}`)
-                    client.say(target, `/vip ${context.username}`)
-
-                    let data;
-                    let broadcaster_id
-                    await fetch(`https://api.twitch.tv/helix/users?login=${context.username}`, {
-                        method: "GET",
-                        headers: {
-                            "Authorization": `Bearer ${opts.identity.password}`,
-                            "Client-ID": clientID
+            for(let i = 0; i < commands.length; i++){
+                for(let j = 0; j < commands[i].length; j++){
+                    console.log(commands[i][j])
+                    if(commands[i][j].enabled === 1 && commands[i][j].command_name.toLowerCase() === "vip me"){
+                        if(approvedUsers.includes(context.username)){
+                            client.say(target, `/unmod ${context.username}`)
+                            client.say(target, `/vip ${context.username}`)
+        
+                            let data;
+                            let broadcaster_id
+                            await fetch(`https://api.twitch.tv/helix/users?login=${context.username}`, {
+                                method: "GET",
+                                headers: {
+                                    "Authorization": `Bearer ${opts.identity.password}`,
+                                    "Client-ID": clientID
+                                }
+                            })
+                            .then((response) => response.json())
+                            .then((json) => data = json)
+                            //.then(() => console.log(data))
+        
+                            await fetch(`https://api.twitch.tv/helix/users?login=${channelName}`, {
+                                method: "GET",
+                                headers: {
+                                    "Authorization": `Bearer ${opts.identity.password}`,
+                                    "Client-ID": clientID
+                                }
+                            })
+                            .then((response) => response.json())
+                            .then((json) => broadcaster_id = json.data[0].id)
+                            //.then(() => console.log(broadcaster_id))
+                            // console.log(broadcaster_id)
+                            // console.log(context.username)
+                            // console.log(data.data[0].id)
+                        // Unmod User
+                            await fetch(`https://api.twitch.tv/helix/moderation/moderators?broadcaster_id=${broadcaster_id}&user_id=${data.data[0].id}`, {
+                                method: "DELETE",
+                                headers: {
+                                    "Authorization": `Bearer ${auth_code}`,
+                                    "Client-ID": clientID
+                                }
+                            })
+                        // VIP User
+                            .then(
+                                await fetch(`https://api.twitch.tv/helix/channels/vips?broadcaster_id=${broadcaster_id}&user_id=${data.data[0].id}`, {
+                                    method: "POST",
+                                    headers: {
+                                        "Authorization": `Bearer ${auth_code}`,
+                                        "Client-ID": clientID
+                                    }
+                                })
+                            )
                         }
-                    })
-                    .then((response) => response.json())
-                    .then((json) => data = json)
-                    //.then(() => console.log(data))
-
-                    await fetch(`https://api.twitch.tv/helix/users?login=${channelName}`, {
-                        method: "GET",
-                        headers: {
-                            "Authorization": `Bearer ${opts.identity.password}`,
-                            "Client-ID": clientID
+                        else{
+                            console.log("user is not authorized")
                         }
-                    })
-                    .then((response) => response.json())
-                    .then((json) => broadcaster_id = json.data[0].id)
-                    //.then(() => console.log(broadcaster_id))
-                    // console.log(broadcaster_id)
-                    // console.log(context.username)
-                    // console.log(data.data[0].id)
-                // Unmod User
-                    await fetch(`https://api.twitch.tv/helix/moderation/moderators?broadcaster_id=${broadcaster_id}&user_id=${data.data[0].id}`, {
-                        method: "DELETE",
-                        headers: {
-                            "Authorization": `Bearer ${auth_code}`,
-                            "Client-ID": clientID
-                        }
-                    })
-                // VIP User
-                    .then(
-                        await fetch(`https://api.twitch.tv/helix/channels/vips?broadcaster_id=${broadcaster_id}&user_id=${data.data[0].id}`, {
-                            method: "POST",
-                            headers: {
-                                "Authorization": `Bearer ${auth_code}`,
-                                "Client-ID": clientID
-                            }
-                        })
-                    )
+                    }
                 }
-                else{
-                    console.log("user is not authorized")
-                }
-            
+            }
+                
             // if (approvedUsers.includes(context.username)){
             //     client.say(target, `/unmod ${context.username}`)
             //     client.say(target, `/vip ${context.username}`)
@@ -267,7 +299,7 @@ async function onMessageHandler (target, context, msg, self) {
                                         if(res[j].user_level === "everyone"){
                                             client.say(target, res[j].action)
                                         }
-                                        if((res[j].user_level === "subscriber" && context.subscriber) || (res[j].user_level === "subscriber" && context.mod) || (res[j].user_level === "subscriber" && context.badges.vip)){
+                                        else if((res[j].user_level === "subscriber" && context.subscriber) || (res[j].user_level === "subscriber" && context.mod) || (res[j].user_level === "subscriber" && context.badges.vip)){
                                             client.say(target, res[j].action)
                                         }
                                         else if(res[j].user_level === "moderator" && context.mod){
@@ -381,6 +413,8 @@ app.get('/user/:username', (req, res) => {
     .then((response) => {res.send(response)})
     
 })
+//Replace with database connection and table
+const refreshTokens = []
 
 app.post('/auth', (req, res) =>{
     let userid;
@@ -400,14 +434,54 @@ app.post('/auth', (req, res) =>{
     profile_picture = req.body.profile_picture
     username = req.body.username
     auth_code = req.body.code
+    const code = {name: username}
+    const accessToken = generateAccessToken(code)
+    const refreshToken = jwt.sign(code, process.env.REFRESH_TOKEN_SECRET)
+    refreshTokens.push()
     //getAuthCode(username)
     //console.log(req.body.code)
     //console.log(auth_code)
     //console.log(req.body.username)
     //addChannel(username)
     getAndOrCreateUser(username, profile_picture, auth_code)
+    res.json({accessToken: accessToken, refreshToken: refreshToken})
     //console.log(client.getChannels())
 })
+
+
+
+app.post('/token', (req, res) => {
+    const refreshToken = req.body.token
+    if(refreshToken == null){
+        return res.sendStatus(401)
+    }
+    if(!refreshTokens.includes(refreshToken)){
+        return res.sendStatus(403)
+    }
+    jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
+        const accessToken = generateAccessToken({name: user.name})
+        res.json({accessToken: accessToken})
+    })
+})
+
+function authenticateToken(req, res, next){
+    const authHeader = req.headers['authorization']
+    const token = authHeader && authHeader.split(' ')[1]
+    if(token == null){
+        return res.sendStatus(401)
+    }
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
+        if (err) {
+            return res.sendStatus(403)
+        }
+        req.user = user
+        next()
+    })
+}
+
+function generateAccessToken(user){
+    return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '15s' })
+}
 
 //Route that handles login logic
 app.post('/login', (req, res) =>{
@@ -425,7 +499,12 @@ app.post('/signup', (req, res) =>{
     console.log(req.body.password) 
 })
 
-app.post('/part', (req, res) => {
+app.delete('/logout', (req, res) => {
+    refreshTokens = refreshtokens.filter(token => token !== req.body.token)
+    res.sendStatus(204)
+})
+
+app.post('/part', authenticateToken, (req, res) => {
     // if(client.getChannels().includes(`#${req.body.username}`)){
     //     client.part(req.body.username)
     //     .catch(error => console.log(error))
@@ -435,7 +514,7 @@ app.post('/part', (req, res) => {
     delChannel(req.body.username)
 })
 
-app.post('/join', (req, res) => {
+app.post('/join', authenticateToken, (req, res) => {
     // if(!client.getChannels().includes(`${req.body.username}`)){
     //     client.join(req.body.username)
     //     .catch(error => console.log(error))
@@ -531,7 +610,8 @@ async function JoinAllChannelsOnInit(){
     const activeChannels = await getActiveChannels()
     for(let i = 0; i < activeChannels.length; i++){
         getUsername(activeChannels[i].user_id).then(res => {
-            console.log(`joining channel: ${res[0].username}`); addChannel(res[0].username)
+            console.log(`joining channel: ${res[0].username}`);
+            addChannel(res[0].username)
         })
     }
 }

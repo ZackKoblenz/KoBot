@@ -27,10 +27,10 @@ if (document.location.hash && !getCookie("accessToken")) {
         console.log(access_token)
         document.cookie = `accessToken=${access_token}`
         GetChannelInfo(access_token)
-        setTimeout(() => {
-            ProfilePicture()
-        }, 500)
-        setTimeout(() => {console.log("reloading"); location.href = "/"}, 750)
+        // setTimeout(() => {
+        //     ProfilePicture()
+        // }, 500)
+        // setTimeout(() => {console.log("reloading"); location.href = "/"}, 750)
     }
 }
 
@@ -38,7 +38,7 @@ if (document.location.hash && !getCookie("accessToken")) {
 if(location.pathname === "/pages/profile.html"){
 
     GetChannels()
-    JoinAndPartChannel()
+    JoinAndPartChannel(getCookie("auth"))
     getCommands(getCookie("username")).then(() => {
         getWhitelist(getCookie("username"))
     })
@@ -70,6 +70,7 @@ async function GetChannelInfo(){
         profilePicture = data.data[0].profile_image_url
         username = data.data[0].login
         document.cookie = `username=${data.data[0].login}`
+        console.log(access_token)
         passInfoToBackend(access_token, data.data[0].login)
         document.cookie = `profilePicture=${data.data[0].profile_image_url}`
     })
@@ -214,19 +215,22 @@ async function JoinChannelOnLogin(){
             }
         }
         if(bool.includes("true")){
-            joinChannel()
+            
+            joinChannel(getCookie("auth"))
         }else{ 
-            partChannel()
+            partChannel(getCookie("auth"))
         }
     })
     
 }
 
-async function joinChannel(){
+async function joinChannel(code){
     await fetch("http://localhost:3000/join",{
         method: "POST",
         headers: {
-            "Content-Type": "application/json",
+            "Authorization": `Bearer ${code}`,
+            "Content-Type": "application/json"
+            
         },
         body: `{"username": "${getCookie("username")}"}`
     })
@@ -235,11 +239,13 @@ async function joinChannel(){
     });
 }
 
-async function partChannel(){
+async function partChannel(code){
+    console.log(code)
     await fetch("http://localhost:3000/part",{
         method: "POST",
         headers: {
-            "Content-Type": "application/json",
+            "Authorization": `Bearer ${code}`,
+            "Content-Type": "application/json"
         },
         body: `{"username": "${getCookie("username")}"}`
     })
@@ -256,7 +262,8 @@ function JoinAndPartChannel() {
         await fetch("http://localhost:3000/join",{
             method: "POST",
             headers: {
-                "Content-Type": "application/json",
+                "Authorization": `Bearer ${getCookie("auth")}`,
+                "Content-Type": "application/json"
             },
             body: `{"username": "${getCookie("username")}"}`
         })
@@ -270,7 +277,8 @@ function JoinAndPartChannel() {
         await fetch("http://localhost:3000/part",{
             method: "POST",
             headers: {
-                "Content-Type": "application/json",
+                "Authorization": `Bearer ${getCookie("auth")}`,
+                "Content-Type": "application/json"
             },
             body: `{"username": "${getCookie("username")}"}`
         })
@@ -290,7 +298,16 @@ async function passInfoToBackend(access_token, login) {
             "Content-Type": "application/json",
         },
         body: `{"code": "${access_token}", "username": "${login}", "profile_picture": "${profilePicture}"}`
+    }).then(res => res.json())
+    .then(json => {
+        //console.log(json)
+        document.cookie = `auth=${json.accessToken}`
+        console.log(getCookie("auth"))
+        document.cookie = `refresh=${json.refreshToken}`
+        //console.log(getCookie("auth"))
     })
+
+    
 }
 
 async function updateCommand(username, command, action, userlevel, enabled){
