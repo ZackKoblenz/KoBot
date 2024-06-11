@@ -395,7 +395,7 @@ app.get('/', (req, res)=>{
     res.send("Welcome to your server")
 })
 
-app.get('/channels', (req, res) => {
+app.get('/channels', authenticateToken, (req, res) => {
     //res.send(client.getChannels())
     async function sendGetChannels(){
         res.send(await getActiveChannels())
@@ -408,7 +408,7 @@ app.param('username', function (req, res, next, id){
     next()
 })
 
-app.get('/user/:username', (req, res) => { 
+app.get('/user/:username', authenticateToken, (req, res) => { 
     getProfilePic(req.params.username)
     .then((response) => {res.send(response)})
     
@@ -428,9 +428,7 @@ app.post('/auth', (req, res) =>{
             console.log("user does not exist yet")
         }})
     }
-    getAuthUser().then(async() => {
-        await setAuthCode(req.body.code, userid)
-    })
+
     profile_picture = req.body.profile_picture
     username = req.body.username
     auth_code = req.body.code
@@ -443,7 +441,11 @@ app.post('/auth', (req, res) =>{
     //console.log(auth_code)
     //console.log(req.body.username)
     //addChannel(username)
-    getAndOrCreateUser(username, profile_picture, auth_code)
+    getAuthUser().then(async() => {
+        await setAuthCode(req.body.code, userid)
+        await setJWT(accessToken, userid)
+    })
+    getAndOrCreateUser(username, profile_picture, auth_code, accessToken)
     res.json({accessToken: accessToken, refreshToken: refreshToken})
     //console.log(client.getChannels())
 })
@@ -480,7 +482,7 @@ function authenticateToken(req, res, next){
 }
 
 function generateAccessToken(user){
-    return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '15s' })
+    return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '15m' })
 }
 
 //Route that handles login logic
@@ -510,8 +512,8 @@ app.post('/part', authenticateToken, (req, res) => {
     //     .catch(error => console.log(error))
     //     console.log("Parting Channel")
     // }
-    console.log("Parting Channel: " + `${req.body.username}`)
-    delChannel(req.body.username)
+
+    delChannel(req.body.jwt)
 })
 
 app.post('/join', authenticateToken, (req, res) => {
@@ -520,8 +522,7 @@ app.post('/join', authenticateToken, (req, res) => {
     //     .catch(error => console.log(error))
     //     console.log("Joining Channel")
     // }
-    console.log("Joining Channel: " + `${req.body.username}`)
-    addChannel(req.body.username)
+    addChannel(req.body.jwt)
 })
 
 //Start your server on a specified port
@@ -529,55 +530,61 @@ app.listen(port, () => {
     console.log(`Server is running on port ${port}`)
 })
 
-app.post('/commands', (req,res) => {
-    getCommandsByUsername(req.body.username)
-    .then((response) => {
-        res.send(response);
+app.post('/commands', authenticateToken, (req,res) => {
+    getUsernameByJWT(req.body.jwt)
+    .then(response => 
+    {
+        getCommandsByUsername(response)
+        .then((response) => {
+            res.send(response);
+        })
     })
+
+    
 })
 
-app.post('/commands/get', (req,res) => {
+app.post('/commands/get', authenticateToken, (req,res) => {
     getCommandById(req.body.commandid)
     .then((response) => {
         res.send(response)
     })
 })
 
-app.post('/commands/add', (req,res) => {
+app.post('/commands/add', authenticateToken, (req,res) => {
     console.log("add command")
     addCommand(req.body.username, req.body.command, req.body.action, req.body.userlevel)
 })
 
-app.post('/commands/update/all', (req, res) => {
+app.post('/commands/update/all', authenticateToken, (req, res) => {
     updateCommand(req.body.username, req.body.command, req.body.action, req.body.userlevel, req.body.enabled)
 })
 
-app.patch('/commands/update/name', (req, res) => {
+app.patch('/commands/update/name', authenticateToken, (req, res) => {
     updateCommandName(req.body.username, req.body.command, req.body.name)
 })
 
-app.patch('/commands/update/action', (req, res) => {
+app.patch('/commands/update/action', authenticateToken, (req, res) => {
     updateCommandAction(req.body.username, req.body.command, req.body.action)
 })
 
-app.patch('/commands/update/userlevel', (req, res) => {
+app.patch('/commands/update/userlevel', authenticateToken, (req, res) => {
     updateCommandUserLevel(req.body.username, req.body.command, req.body.userlevel)
 })
 
-app.post('/commands/update/enable', (req, res) => {
+app.post('/commands/update/enable', authenticateToken, (req, res) => {
     updateCommandEnabledState(req.body.username, req.body.command, req.body.enabled)
 })
 
-app.delete('/commands', (req,res) => {
+app.delete('/commands', authenticateToken, (req,res) => {
     delCommand(req.body.username, req.body.command).then(()=> res.send(`${req.body.command} deleted.`))
     
 })
 
-app.patch('/commands', (req,res) => {
+app.patch('/commands', authenticateToken, (req,res) => {
     updateCommand(req.body.username, req.body.command, req.body.action)
 })
 
-app.post('/commands/whitelist/get', (req, res) => {
+app.post('/commands/whitelist/get', authenticateToken, (req, res) => {
     async function awaitGetWhitelist(){
         let resVariable;
         await getWhitelist(req.body.username).then((response) => {resVariable = response})
@@ -587,36 +594,48 @@ app.post('/commands/whitelist/get', (req, res) => {
     
 })
 
-app.post('/commands/whitelist/add', (req,res) => {
+app.post('/commands/whitelist/add', authenticateToken, (req,res) => {
     addWhitelist(req.body.username, req.body.command, req.body.whitelist)
 })
 
-app.delete('/commands/whitelist/delete', (req,res) => {
+app.delete('/commands/whitelist/delete', authenticateToken, (req,res) => {
     delWhitelistedUser(req.body.username, req.body.command, req.body.whitelist)
 })
 
-app.post('/userid', (req, res) => {
+app.post('/userid', authenticateToken, (req, res) => {
     async function awaitGetUserId(){
         //console.log(await getUserID(req.body.username))
         let resVariable;
-        await getUserID(req.body.username).then((response) => resVariable = response)
+        await getUserIDByJWT(req.body.jwt).then((response) => resVariable = response)
+        .catch(err => {console.log(err)})
         res.send(resVariable.toString())
     }
     awaitGetUserId()
 })
+
 
 async function JoinAllChannelsOnInit(){
     await client.connect();
     const activeChannels = await getActiveChannels()
     for(let i = 0; i < activeChannels.length; i++){
         getUsername(activeChannels[i].user_id).then(res => {
-            console.log(`joining channel: ${res[0].username}`);
-            addChannel(res[0].username)
+            console.log(`Joining channel: ${res[0].username}`);
+            client.join(res[0].username)
         })
     }
 }
 
 JoinAllChannelsOnInit()
+
+async function setJWT(jwt, userid){
+    try{
+        await pool.promise().query(`USE ${database}`)
+        const [rows, fields] = await pool.promise()
+            .query('UPDATE users SET jwt = ? WHERE id = ?', [`${jwt}`, userid]);
+    }catch(err){
+        console.log(err)
+    }
+}
 
 async function setAuthCode(auth_code, userid){
     try{
@@ -644,7 +663,7 @@ async function getAuthCode(username){
     }
 }
 
-async function getAndOrCreateUser(username, profile_picture, auth_code)
+async function getAndOrCreateUser(username, profile_picture, auth_code, jwt)
 {
     let userid = await getUserID(username)
     .then((res) =>{
@@ -655,11 +674,11 @@ async function getAndOrCreateUser(username, profile_picture, auth_code)
         return
     }
     else{
-        createUser(username, profile_picture, auth_code).then(()=>{addChannel(username)})
+        createUser(username, profile_picture, auth_code, jwt).then(()=>{addChannel(username, jwt)})
         
     }
 }
-async function addChannel(username){
+async function addChannel(jwt){
     // Old Code For Joining Channels
     // if(!opts.channels.includes(username)){
     //     opts.channels.push(username)
@@ -670,10 +689,19 @@ async function addChannel(username){
 
     try{
         await pool.promise().query(`USE ${database}`)
-        let userid = await getUserID(username)
+        let username = await getUsernameByJWT(jwt)
         .then(
-            (response) => { return response }
+            (response) => { 
+                return response 
+            }
         )
+        let userid = await getUserIDByJWT(jwt)
+        .then(
+            (response) => { 
+                return response 
+            }
+        )
+        .catch(err => {console.log(err)})
         let channels = await getActiveChannels()
         .then(
             (response) => { return response }
@@ -688,7 +716,8 @@ async function addChannel(username){
         if (channelCheck === false){
             const [rows, fields] = await pool.promise()
             .query('INSERT INTO active_channels (user_id) VALUES (?)', [`${userid}`]);
-            client.join(username)
+            console.log("Joining Channel: " + `${username}`)
+            client.join(username).catch((err)=>{console.log(err)})
         }
     }
     catch (err){
@@ -708,13 +737,35 @@ async function getActiveChannels(){
     }
 }
 
-async function delChannel(username){
+async function delChannel(jwt){
+    try{
+        await pool.promise().query(`USE ${database}`)
+        let username = await getUsernameByJWT(jwt)
+        .then(
+            (response) => { return response }
+        )
+        let userid = await getUserIDByJWT(jwt)
+        .then(
+            (response) => { return response }
+        )
+        .catch(err => {console.log(err)})
+        const [rows, fields] = await pool.promise()
+        .query('DELETE FROM active_channels WHERE user_id = ?', [userid])
+        console.log("Parting Channel: " + `${username}`)
+        client.part(username).catch((err) => console.log(err))
+    }catch(err){
+        console.log(err)
+    }    
+}
+
+async function delChannelByUsername(username){
     try{
         await pool.promise().query(`USE ${database}`)
         let userid = await getUserID(username)
         .then(
             (response) => { return response }
         )
+        .catch(err => {console.log(err)})
         const [rows, fields] = await pool.promise()
         .query('DELETE FROM active_channels WHERE user_id = ?', [userid])
         client.part(username).catch((err) => console.log(err))
@@ -723,12 +774,11 @@ async function delChannel(username){
     }    
 }
 
-
-async function createUser(username, profile_picture, auth_code){
+async function createUser(username, profile_picture, auth_code, jwt){
     try {
       await pool.promise().query(`USE ${database}`)
       
-      const [rows, fields] = await pool.promise().query('INSERT INTO users (username, profile_picture, auth_code) VALUES (?,?,?)', [`${username.toString()}`, `${profile_picture.toString()}`, `${auth_code.toString()}`]);
+      const [rows, fields] = await pool.promise().query('INSERT INTO users (username, profile_picture, auth_code, jwt) VALUES (?,?,?,?)', [`${username.toString()}`, `${profile_picture.toString()}`, `${auth_code.toString()}`, `${jwt.toString()}`]);
       //Add !dice, mod me, and vip me commands to commands for user on create user.
       //That way the commands can be whitelisted
       addCommand(username, "mod me", "This command allows a whitelisted user to mod themselves", "broadcaster", 1)
@@ -774,6 +824,42 @@ async function getUserID(username){
     }
 }
 
+async function getUserIDByJWT(jwt){
+    try{
+        await pool.promise().query(`USE ${database}`)
+        const [rows, fields] = await pool.promise().query('SELECT distinct(id) as user_id FROM users WHERE jwt = ?', [jwt])
+        //console.log(rows[0].user_id)
+        if(typeof rows[0] === 'undefined'){
+            return false
+        }
+        else {
+            //console.log(rows[0].user_id)
+            return rows[0].user_id
+        }
+        
+    }
+    catch (err){
+        console.log(err)
+    }
+}
+async function getUsernameByJWT(jwt){
+    try{
+        await pool.promise().query(`USE ${database}`)
+        const [rows, fields] = await pool.promise().query('SELECT username FROM users WHERE jwt = ?', [jwt])
+        //console.log(rows[0].user_id)
+        if(typeof rows[0] === 'undefined'){
+            return false
+        }
+        else {
+            //console.log(rows[0].user_id)
+            return rows[0].username
+        }
+        
+    }
+    catch (err){
+        console.log(err)
+    }
+}
 async function getUsername (userid){
     try{
         await pool.promise().query(`USE ${database}`)
@@ -801,7 +887,7 @@ async function delUser(username){
         )
         await delAllWhitelist(username)
         await delAllCommands(username)
-        await delChannel(username)
+        await delChannelByUsername(username)
         const [rows, fields] = await pool.promise().query('DELETE FROM users WHERE id = ?', [userid])
     }
     catch(err){
