@@ -3,6 +3,7 @@ let access_token;
 let data;
 let profilePicture;
 let username;
+const server = "https://backend.ble.nz"
 let div = document.getElementById('profile_picture')
 let img = document.createElement('img')
 img.addEventListener('click', function(){
@@ -116,7 +117,7 @@ function ProfilePicture(){
 }    
 
 async function ProfilePictureFetch(user) { 
-    await fetch(`http://localhost:3000/user/${user}`, {
+    await fetch(`${server}/user/${user}`, {
     method: "GET",
     headers: {
         "Authorization": `Bearer ${getCookie('auth')}`,
@@ -132,7 +133,7 @@ async function ProfilePictureFetch(user) {
 async function GetChannels(){
     let joinButton = document.getElementById('join')
     let partButton = document.getElementById('part') 
-    let userid = await fetch('http://localhost:3000/userid', {
+    let userid = await fetch(`${server}/userid`, {
         method: "POST",
         headers: {
             "Authorization": `Bearer ${getCookie('auth')}`,
@@ -141,6 +142,7 @@ async function GetChannels(){
         body: `{"jwt": "${getCookie("auth")}"}`
     })
     .then((res) => {
+        console.log(res)
         return res.json()
     })
     .catch((error) => {
@@ -153,7 +155,7 @@ async function GetChannels(){
     })
 //    console.log(userid)
 
-    await fetch('http://localhost:3000/channels', {
+    await fetch(`${server}/channels`, {
         method: "GET",
         headers: {
             "Authorization": `Bearer ${getCookie('auth')}`,
@@ -186,7 +188,7 @@ async function GetChannels(){
 }
 
 async function JoinChannelOnLogin(){ 
-    let userid = await fetch('http://localhost:3000/userid', {
+    let userid = await fetch(`${server}/userid`, {
         method: "POST",
         headers: {
             "Authorization": `Bearer ${getCookie('auth')}`,
@@ -202,7 +204,7 @@ async function JoinChannelOnLogin(){
     })
    console.log(userid)
 
-    await fetch('http://localhost:3000/channels', {
+    await fetch(`${server}/channels`, {
         method: "GET",
         headers: {
             "Authorization": `Bearer ${getCookie('auth')}`,
@@ -233,7 +235,7 @@ async function JoinChannelOnLogin(){
 
 async function joinChannel(){
     console.log(getCookie("auth"))
-    await fetch("http://localhost:3000/join",{
+    await fetch(`${server}/join`,{
         method: "POST",
         headers: {
             "Authorization": `Bearer ${getCookie("auth")}`,
@@ -248,7 +250,7 @@ async function joinChannel(){
 }
 
 async function partChannel(){
-    await fetch("http://localhost:3000/part",{
+    await fetch(`${server}/part`,{
         method: "POST",
         headers: {
             "Authorization": `Bearer ${getCookie("auth")}`,
@@ -285,7 +287,7 @@ function JoinAndPartChannel() {
 
 async function passInfoToBackend(access_token, login) {
     console.log(username)
-    await fetch ("http://localhost:3000/auth",{
+    await fetch (`${server}/auth`,{
         method: "POST",
         headers: {
             "Authorization": `Bearer ${getCookie('auth')}`,
@@ -305,7 +307,7 @@ async function passInfoToBackend(access_token, login) {
 }
 
 async function updateCommand(username, command, action, userlevel, enabled){
-    await fetch ("http://localhost:3000/commands/update/all", {
+    await fetch (`${server}/commands/update/all`, {
         method: "POST",
         headers: {
             "Authorization": `Bearer ${getCookie('auth')}`,
@@ -316,7 +318,7 @@ async function updateCommand(username, command, action, userlevel, enabled){
 }
 
 async function updateCommandEnabled(username, command, enabled) {
-    await fetch ("http://localhost:3000/commands/update/enable", {
+    await fetch (`${server}/commands/update/enable`, {
         method: "POST",
         headers: {
             "Authorization": `Bearer ${getCookie('auth')}`,
@@ -328,7 +330,7 @@ async function updateCommandEnabled(username, command, enabled) {
 
 async function getCommands(){
     const myList = document.getElementById("commands")
-    await fetch("http://localhost:3000/commands", {
+    await fetch(`${server}/commands`, {
         method: "POST",
         headers: {
             "Authorization": `Bearer ${getCookie('auth')}`,
@@ -495,7 +497,7 @@ async function getCommands(){
 
 
 async function addWhitelist(username, command, whitelist){
-    await fetch('http://localhost:3000/commands/whitelist/add', {
+    await fetch(`${server}/commands/whitelist/add`, {
         method: "POST",
         headers: {
             "Authorization": `Bearer ${getCookie('auth')}`,
@@ -506,7 +508,7 @@ async function addWhitelist(username, command, whitelist){
 }
 
 async function delWhitelist(username, command, whitelist){
-    await fetch('http://localhost:3000/commands/whitelist/delete', {
+    await fetch(`${server}/commands/whitelist/delete`, {
         method: "DELETE",
         headers: {
             "Authorization": `Bearer ${getCookie('auth')}`,
@@ -517,7 +519,7 @@ async function delWhitelist(username, command, whitelist){
 }
 
 async function getWhitelist(username){
-    await fetch("http://localhost:3000/commands/whitelist/get", {
+    await fetch(`${server}/commands/whitelist/get`, {
         method: "POST",
         headers: {
             "Authorization": `Bearer ${getCookie('auth')}`,
@@ -551,7 +553,7 @@ async function getWhitelist(username){
 }
 
 async function getCommandById(commandid){
-    await fetch("http://localhost:3000/commands/get", {
+    await fetch(`${server}/commands/get`, {
         method: "POST",
         headers: {
             "Authorization": `Bearer ${getCookie('auth')}`,
@@ -569,7 +571,7 @@ async function getCommandById(commandid){
 
 async function addCommand(username, command, action, userlevel){
     console.log("add command")
-    await fetch('http://localhost:3000/commands/add', {
+    await fetch(`${server}/commands/add`, {
         method: "POST",
         headers: {
             "Authorization": `Bearer ${getCookie('auth')}`,
@@ -581,7 +583,7 @@ async function addCommand(username, command, action, userlevel){
 
  async function delCommand(username, command){
     // console.log("delete command")
-    await fetch('http://localhost:3000/commands/', {
+    await fetch(`${server}/commands/`, {
         method: "DELETE",
         headers: {
             "Authorization": `Bearer ${getCookie('auth')}`,
