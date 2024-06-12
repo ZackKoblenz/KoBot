@@ -20,10 +20,10 @@ const createTables = async () => {
       const connection = await pool.promise().getConnection();
   
       // Create a new schema
-      await connection.query(`CREATE SCHEMA IF NOT EXISTS twitch_app2`);
+      //await connection.query(`CREATE SCHEMA IF NOT EXISTS twitch_app2`);
   
       // Use the new schema
-      await connection.query(`USE twitch_app2`);
+      await connection.query(`USE ${process.env.SQL_DATABASE}`);
   
       // Create tables
       await connection.query(`
@@ -31,6 +31,8 @@ const createTables = async () => {
           id INT AUTO_INCREMENT PRIMARY KEY,
           username VARCHAR(50) NOT NULL,
           profile_picture VARCHAR(255) NOT NULL,
+          auth_code VARCHAR(255),
+          jwt VARCHAR(255),
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           CONSTRAINT unique_username UNIQUE (username)
         )
@@ -43,6 +45,8 @@ const createTables = async () => {
           FOREIGN KEY user_id(user_id) REFERENCES users(id),
           command_name VARCHAR(50) NOT NULL,
           action VARCHAR(255) NOT NULL,
+          user_level VARCHAR(50) NOT NULL,
+          enabled BOOLEAN,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           CONSTRAINT unique_command_name UNIQUE unique_index(command_name, user_id)
         )
@@ -53,7 +57,15 @@ const createTables = async () => {
           streamer_id INT NOT NULL,
           command_id INT NOT NULL,
           FOREIGN KEY (command_id) REFERENCES commands(id),
-          username VARCHAR(50) NOT NULL
+          username VARCHAR(50) NOT NULL,
+          CONSTRAINT unique_username_and_command_name UNIQUE unique_index(command_id, username)
+        )
+      `)
+
+      await connection.query(`
+        CREATE TABLE IF NOT EXISTS active_channels(
+          user_id INT NOT NULL,
+          FOREIGN KEY (user_id) REFERENCES users(id)
         )
       `)
       console.log("Schema and tables created successfully");

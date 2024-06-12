@@ -10,7 +10,7 @@ let auth_code; //ONLY DEFINED ON LOG IN - FIX BUG 001
 let profile_picture;
 const tmi = require('tmi.js');
 const clientID = process.env.CLIENT_ID
-const database = 'twitch_app2'
+const database = process.env.SQL_DATABASE
 // Define configuration options
 const opts = {
   identity: {
@@ -608,7 +608,10 @@ app.post('/userid', authenticateToken, (req, res) => {
         let resVariable;
         await getUserIDByJWT(req.body.jwt).then((response) => resVariable = response)
         .catch(err => {console.log(err)})
-        res.send(resVariable.toString())
+        if(resVariable){
+            res.send(resVariable.toString())
+        }
+        
     }
     awaitGetUserId()
 })
@@ -617,12 +620,18 @@ app.post('/userid', authenticateToken, (req, res) => {
 async function JoinAllChannelsOnInit(){
     await client.connect();
     const activeChannels = await getActiveChannels()
-    for(let i = 0; i < activeChannels.length; i++){
-        getUsername(activeChannels[i].user_id).then(res => {
-            console.log(`Joining channel: ${res[0].username}`);
-            client.join(res[0].username)
-        })
+    if (typeof activeChannels !== 'undefined'){
+        for(let i = 0; i < activeChannels.length; i++){
+            getUsername(activeChannels[i].user_id).then(res => {
+                console.log(`Joining channel: ${res[0].username}`);
+                client.join(res[0].username)
+            })
+        }
     }
+    else{
+        console.log('sql connection error')
+    }
+
 }
 
 JoinAllChannelsOnInit()
@@ -656,7 +665,7 @@ async function getAuthCode(username){
         const [rows, fields] = await pool.promise()
             .query('SELECT auth_code FROM users WHERE id = ?', [userid]);
             auth_code = rows[0].auth_code
-            console.log(rows)
+            //console.log(rows)
         return rows
     }catch(err){
         console.log(err)
@@ -733,7 +742,7 @@ async function getActiveChannels(){
         return rows
     }
     catch (err){
-        console.log(err)
+        console.log(err.sqlMessage)
     }
 }
 

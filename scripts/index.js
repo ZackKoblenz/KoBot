@@ -27,10 +27,10 @@ if (document.location.hash && !getCookie("accessToken")) {
         console.log(access_token)
         document.cookie = `accessToken=${access_token}`
         GetChannelInfo(access_token)
-        // setTimeout(() => {
-        //     ProfilePicture()
-        // }, 500)
-        // setTimeout(() => {console.log("reloading"); location.href = "/"}, 750)
+        setTimeout(() => {
+            ProfilePicture()
+        }, 500)
+        setTimeout(() => {console.log("reloading"); location.href = "/"}, 750)
     }
 }
 
@@ -146,11 +146,12 @@ async function GetChannels(){
     .catch((error) => {
         joinButton.remove()
         partButton.remove()
-        let p = document.createElement('p').innerText = `<p>Unable To Reach Server</p><p>${error}</p>`
+        let p = document.createElement('p').innerText = `<p>Unable To Reach Server. This page likely wont work until someone fixes the backend.. Sorry!</p><!--<p>${error}</p>-->`
         let er = document.getElementById("error")
         er.innerHTML = p
+        
     })
-   console.log(userid)
+//    console.log(userid)
 
     await fetch('http://localhost:3000/channels', {
         method: "GET",
@@ -180,6 +181,7 @@ async function GetChannels(){
             //partChannel()
         }
     })
+    .catch(err => console.error("unable to reach server - getChannels"))
     
 }
 
@@ -488,6 +490,7 @@ async function getCommands(){
         }
 
     })
+    .catch(err => console.error("unable to reach server - getCommands"))
 }
 
 
@@ -544,6 +547,7 @@ async function getWhitelist(username){
         }
         
         })
+        .catch(err => console.error("unable to reach server - getWhitelist"))
 }
 
 async function getCommandById(commandid){
