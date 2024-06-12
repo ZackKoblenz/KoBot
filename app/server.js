@@ -4,7 +4,7 @@ const pool = require('./database')
 const app = express()
 const bodyParser = require('body-parser')
 const cors = require('cors')
-const port = 3000
+const port = process.env.PORT || 3000
 const jwt = require('jsonwebtoken')
 let auth_code; //ONLY DEFINED ON LOG IN - FIX BUG 001
 let profile_picture;
