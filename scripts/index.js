@@ -3,7 +3,7 @@ let access_token;
 let data;
 let profilePicture;
 let username;
-const server = "http://localhost:3000"
+const server = "https://kobot.ble.nz"
 let div = document.getElementById('profile_picture')
 let img = document.createElement('img')
 img.addEventListener('click', function(){
