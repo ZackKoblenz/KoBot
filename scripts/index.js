@@ -3,7 +3,7 @@ let access_token;
 let data;
 let profilePicture;
 let username;
-const server = "https://backend.ble.nz"
+const server = "http://localhost:3000"
 let div = document.getElementById('profile_picture')
 let img = document.createElement('img')
 img.addEventListener('click', function(){
@@ -143,11 +143,22 @@ async function GetChannels(){
     })
     .then((res) => {
         console.log(res)
-        return res.json()
+        if(res.status === 403){
+            joinButton.remove()
+            partButton.remove()
+            let p = document.createElement('p').innerText = `<p>Your Login Session is Currently Invalid. Please Sign out and Sign back in!</p>`
+            let er = document.getElementById("error")
+            er.innerHTML = p
+        }
+        else{
+            return res.json()
+        }
+        
     })
     .catch((error) => {
         joinButton.remove()
         partButton.remove()
+        console.log(error)
         let p = document.createElement('p').innerText = `<p>Unable To Reach Server. This page likely wont work until someone fixes the backend.. Sorry!</p><!--<p>${error}</p>-->`
         let er = document.getElementById("error")
         er.innerHTML = p
@@ -394,7 +405,7 @@ async function getCommands(){
                 const delWhitelist = document.getElementById(`whitelisted${i}`)
                 add[i].addEventListener("click", () => {
                     console.log(whitelist.value)
-                    addWhitelist(getCookie("username"), commands.command_name, whitelist.value)
+                    addWhitelist(getCookie("username"), commands.command_name, whitelist.value.toLowerCase())
                     setTimeout(() => {
                         console.log("reloading"); 
                         location.href = "/pages/profile.html"

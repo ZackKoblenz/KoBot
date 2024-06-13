@@ -75,7 +75,7 @@ async function onMessageHandler (target, context, msg, self) {
             let approvedUsers = []
             let approvedUsersObjects = await getWhitelist(target.slice(1))
             console.log(approvedUsersObjects)
-            let commandid = await getCommandID(target.slice(1), "vip me")
+            let commandid = await getCommandID(target.slice(1), "mod me")
             let channels = await getActiveChannels().then((res) => {
                 return res
             })
@@ -87,12 +87,13 @@ async function onMessageHandler (target, context, msg, self) {
             }
             for(let i = 0; i < channels.length; i++){
                 commands.push(await getCommandsById(`${channels[i].user_id}`).then((res) => {return res}))
-                
             }
             for(let i = 0; i < commands.length; i++){
                 for(let j = 0; j < commands[i].length; j++){
-                    console.log(commands[i][j])
-                    if(commands[i][j].enabled === 1 && commands[i][j].command_name.toLowerCase() === "mod me"){
+                   //console.log(commands[i][j])
+                    console.log(commands[i][j].user_id)
+                    console.log(await getUserID(target.slice(1)))
+                    if(commands[i][j].enabled === 1 && commands[i][j].command_name.toLowerCase() === "mod me" && commands[i][j].user_id === await getUserID(target.slice(1))){
                         if (approvedUsers.includes(context.username)){
                             //client.say(target, `/mod ${context.username}`)
                             let data;
@@ -171,7 +172,7 @@ async function onMessageHandler (target, context, msg, self) {
             for(let i = 0; i < commands.length; i++){
                 for(let j = 0; j < commands[i].length; j++){
                     console.log(commands[i][j])
-                    if(commands[i][j].enabled === 1 && commands[i][j].command_name.toLowerCase() === "vip me"){
+                    if(commands[i][j].enabled === 1 && commands[i][j].command_name.toLowerCase() === "vip me" && commands[i][j].user_id === await getUserID(target.slice(1))){
                         if(approvedUsers.includes(context.username)){
                             client.say(target, `/unmod ${context.username}`)
                             client.say(target, `/vip ${context.username}`)
@@ -801,7 +802,7 @@ async function createUser(username, profile_picture, auth_code, jwt){
       //Add !dice, mod me, and vip me commands to commands for user on create user.
       //That way the commands can be whitelisted
       addCommand(username, "mod me", "This command allows a whitelisted user to mod themselves", "broadcaster", 1)
-      addCommand(username, "vip me", "This command allows a whitelsited user to VIP themselves", "broadcaster", 1)
+      addCommand(username, "vip me", "This command allows a whitelisted user to VIP themselves", "broadcaster", 1)
       addCommand(username, "!dice", "Allows user to roll a specified amount of dice with specified sides", "everyone", 1)
       console.log(rows)
       console.log(fields)
