@@ -51,7 +51,7 @@ async function CheckApprovedUsers(users){
 async function onMessageHandler (target, context, msg, self) {
     if (self) { return; } // Ignore messages from the bot
     // Remove whitespace from chat message
-    const commandName = msg.trim();
+    const commandName = msg.trim().toLowerCase();
     getAuthCode(target.slice(1))
     let approvedUsersObjects = await getWhitelist(target.slice(1))
     // If the command is known, let's execute it
@@ -629,7 +629,8 @@ app.post('/userid', authenticateToken, (req, res) => {
 
 
 async function JoinAllChannelsOnInit(){
-    await client.connect();
+try{
+    await client.connect().catch((err => {console.log(err)}));
     const activeChannels = await getActiveChannels()
     if (typeof activeChannels !== 'undefined'){
         for(let i = 0; i < activeChannels.length; i++){
@@ -642,6 +643,9 @@ async function JoinAllChannelsOnInit(){
     else{
         console.log('sql connection error')
     }
+}catch(err){
+    console.log(err)
+}
 
 }
 
